@@ -1,2 +1,15 @@
 @import 'tailwindcss';
 @plugin 'lightswind/plugin';
+
+:root {
+  --app-bg: #05060b;
+  --app-surface-border: #00f0ff24;
+  --app-surface-border-hover: #00f0ff5c;
+  --app-surface-bg: #00f0ff0a;
+  --app-surface-bg-hover: #00f0ff17;
+  --app-accent: #00f0ff;
+  --app-accent-2: #ff2bd6;
+  --app-accent-deep: #0b0f17;
+  --app-dot: #1b3038;
+  --app-dot-active: #00f0ff;
+}

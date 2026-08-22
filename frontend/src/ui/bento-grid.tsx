@@ -19,36 +19,60 @@ export const BentoGrid = ({
   );
 };
 
+const colSpanClasses = {
+  1: "md:col-span-1",
+  2: "md:col-span-2",
+  3: "md:col-span-3",
+} as const;
+
+const rowSpanClasses = {
+  1: "row-span-1 md:row-span-1",
+  2: "row-span-1 md:row-span-2",
+  3: "row-span-1 md:row-span-3",
+} as const;
+
 export const BentoGridItem = ({
   className,
   title,
   description,
   header,
   icon,
+  children,
+  colSpan = 1,
+  rowSpan = 1,
 }: {
   className?: string;
   title?: string | React.ReactNode;
   description?: string | React.ReactNode;
   header?: React.ReactNode;
   icon?: React.ReactNode;
+  children?: React.ReactNode;
+  colSpan?: 1 | 2 | 3;
+  rowSpan?: 1 | 2 | 3;
 }) => {
   return (
     <div
       className={cn(
-        "group/bento shadow-input row-span-1 flex flex-col justify-between space-y-4 rounded-xl border border-neutral-200 bg-white p-4 transition duration-200 hover:shadow-xl dark:border-white/[0.2] dark:bg-black dark:shadow-none",
+        "group/bento flex flex-col justify-between space-y-4 rounded-xl border border-(--app-surface-border) bg-(--app-surface-bg) p-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all duration-200 hover:border-(--app-surface-border-hover) hover:bg-(--app-surface-bg-hover) hover:shadow-[0_0_35px_-8px_rgba(0,240,255,0.45)]",
+        colSpanClasses[colSpan],
+        rowSpanClasses[rowSpan],
         className,
       )}
     >
-      {header}
-      <div className="transition duration-200 group-hover/bento:translate-x-2">
-        {icon}
-        <div className="mt-2 mb-2 font-sans font-bold text-neutral-600 dark:text-neutral-200">
-          {title}
-        </div>
-        <div className="font-sans text-xs font-normal text-neutral-600 dark:text-neutral-300">
-          {description}
-        </div>
-      </div>
+      {children ?? (
+        <>
+          {header}
+          <div className="transition duration-200 group-hover/bento:translate-x-2">
+            {icon}
+            <div className="mt-2 mb-2 font-sans font-bold text-neutral-100">
+              {title}
+            </div>
+            <div className="font-sans text-xs font-normal text-neutral-400">
+              {description}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
