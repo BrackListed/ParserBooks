@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Feed } from "./pages/Feed";
+import { Home } from "./pages/Home";
 
 export default function App(){
   return(
     <BrowserRouter>
       <Routes>
-        <Route path = "/" element={<Feed/>}></Route>
+        <Route path = "/" element={<Home/>}></Route>
       </Routes>
     </BrowserRouter>
   )
