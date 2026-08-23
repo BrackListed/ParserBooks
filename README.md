@@ -1,2 +1,2 @@
-# Golang-To-Do-List
-A basic to-do list for me to grasp the concepts of Golang CRUD
+# ParserBooks
+ParserBooks is a ERP app meant to help with bookkeeping and handling data
