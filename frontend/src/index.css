@@ -12,34 +12,46 @@
   --app-accent-deep: #0b0f17;
   --app-dot: #1b3038;
   --app-dot-active: #00f0ff;
+}
 
-  --radius: 0.625rem;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/*
+ * `lightswind/plugin` (@plugin above) injects its own `:root` block that
+ * redefines --background, --foreground, --primary, --border, --ring, etc.
+ * as bare HSL triplets, using the exact same variable names shadcn's
+ * components rely on (as oklch colors). That block can land after this
+ * one depending on layer bucketing, so every value here is `!important` —
+ * `!important` unconditionally outranks a non-important declaration
+ * regardless of layer or source order, which a same-layer/no-`!important`
+ * override does not reliably do.
+ */
+:root {
+  --radius: 0.625rem !important;
+  --background: oklch(0.145 0 0) !important;
+  --foreground: oklch(0.985 0 0) !important;
+  --card: oklch(0.205 0 0) !important;
+  --card-foreground: oklch(0.985 0 0) !important;
+  --popover: oklch(0.205 0 0) !important;
+  --popover-foreground: oklch(0.985 0 0) !important;
+  --primary: oklch(0.922 0 0) !important;
+  --primary-foreground: oklch(0.205 0 0) !important;
+  --secondary: oklch(0.269 0 0) !important;
+  --secondary-foreground: oklch(0.985 0 0) !important;
+  --muted: oklch(0.269 0 0) !important;
+  --muted-foreground: oklch(0.708 0 0) !important;
+  --accent: oklch(0.269 0 0) !important;
+  --accent-foreground: oklch(0.985 0 0) !important;
+  --destructive: oklch(0.704 0.191 22.216) !important;
+  --border: oklch(1 0 0 / 10%) !important;
+  --input: oklch(1 0 0 / 15%) !important;
+  --ring: oklch(0.556 0 0) !important;
+  --sidebar: oklch(0.205 0 0) !important;
+  --sidebar-foreground: oklch(0.985 0 0) !important;
+  --sidebar-primary: oklch(0.488 0.243 264.376) !important;
+  --sidebar-primary-foreground: oklch(0.985 0 0) !important;
+  --sidebar-accent: oklch(0.269 0 0) !important;
+  --sidebar-accent-foreground: oklch(0.985 0 0) !important;
+  --sidebar-border: oklch(1 0 0 / 10%) !important;
+  --sidebar-ring: oklch(0.556 0 0) !important;
 }
 
 @theme inline {
@@ -79,9 +91,21 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+}
+
+/*
+ * `lightswind/plugin` also ships its own `body { background-color:
+ * hsl(var(--background)); color: hsl(var(--foreground)); ... }` rule,
+ * which wins the cascade over an `@layer base` body rule. Since our
+ * --background/--foreground are oklch(...) strings (not bare HSL
+ * triplets), `hsl(var(--background))` is invalid at compute time, so
+ * lightswind's rule silently resolves to transparent/inherited-black
+ * instead of falling back to ours. `!important` here forces our body
+ * colors to win outright instead of depending on cascade order.
+ */
+body {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
 }
 
 .no-scrollbar {

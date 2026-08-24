@@ -46,7 +46,7 @@ function SidebarMinimizeButton() {
 
 export function AppSidebar() {
   const isHomeActive = typeof window !== "undefined" && window.location.pathname === "/"
-
+  const isCalendarActive = typeof window !== "undefined" && window.location.pathname === "/work-calendar"
   return (
     <Sidebar>
       <SidebarHeader className="gap-3 p-3">
@@ -93,7 +93,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton>
+              <SidebarMenuButton href="/work-calendar" isActive={isCalendarActive}>
                 <CalendarDays />
                 Work Calendar
               </SidebarMenuButton>
