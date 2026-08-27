@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -14,11 +15,16 @@ import (
 var db *pgxpool.Pool
 
 func main() {
-	db, _ = pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	var err error
+	db, err = pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatal("Failed to connect to db: ", err)
+	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Hello, World!")
 	})
-
+	defer db.Close()
+	http.HandleFunc("/add/work-entry", addWorkEntry)
 	fmt.Println("Server listening on port 8080")
 	http.ListenAndServe(":8080", nil)
 }
