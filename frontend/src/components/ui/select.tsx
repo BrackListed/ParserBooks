@@ -32,6 +32,7 @@ function Select<T extends object, M extends "single" | "multiple" = "single">({
 }: SelectProps<T, M>) {
   return (
     <SelectPrimitive
+      aria-label="Select"
       data-slot="select"
       className={cn("w-fit", className)}
       {...props}

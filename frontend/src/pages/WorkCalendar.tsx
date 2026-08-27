@@ -27,6 +27,7 @@ import {
   TableCell,
   TableCaption,
 } from "@/components/ui/table"
+import axios from "axios"
 
 const personItems = [
   { label: "John", value: "John" },
@@ -41,7 +42,7 @@ const typeItems = [
 
 export function WorkCalendar() {
   const [date, setDate] = useState<CalendarDate | null>(null)
-  const [person, setPerson] = useState("")
+  const [worker, setWorker] = useState("Jacob")
   const [project, setProject] = useState("")
   const [type, setType] = useState("Normal")
   const [hours, setHours] = useState(8)
@@ -101,11 +102,11 @@ export function WorkCalendar() {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">Person</label>
+                    <label className="text-sm text-neutral-300">Worker</label>
                     <Select
-                      placeholder="Select person"
-                      selectedKey={person}
-                      onSelectionChange={(key) => setPerson(key as string)}
+                      placeholder="Select worker"
+                      value={worker}
+                      onChange={(worker) => {setWorker(worker!.toString())}}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue />
@@ -135,8 +136,8 @@ export function WorkCalendar() {
                     <label className="text-sm text-neutral-300">Type</label>
                     <Select
                       placeholder="Type"
-                      selectedKey={type}
-                      onSelectionChange={(key) => setType(key as string)}
+                      value={type}
+                      onChange={(type) => setType(type!.toString())}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue />
@@ -163,7 +164,7 @@ export function WorkCalendar() {
                   />
                 </div>
 
-                <Button className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
+                <Button onClick={() => addEntry(date, worker, project,  type, hours)} className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
                   <Plus className="size-4" />
                   Add Work Entry
                 </Button>
@@ -221,4 +222,15 @@ export function WorkCalendar() {
       </SidebarProvider>
     </div>
   )
+
+  async function addEntry(date: CalendarDate | null, worker: string, project: string, type: string, hours: number){
+    try{
+      const result = await axios.post("http://localhost:8080/add/work-entry", {date: date?.toString(), worker: worker, project: project, type: type, hours: Number(hours)})
+      if(result.status === 201){
+        console.log("Work entry successfully saved")
+      }
+    } catch (err){
+      console.error('Server Error: ', err)
+    }
+  }
 }

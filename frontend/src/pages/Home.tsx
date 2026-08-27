@@ -38,7 +38,7 @@ export function Home(){
                 </div>
                 <div>
                   <p className="text-xs text-neutral-400">Profit Snapshot</p>
-                  <p className="mt-1 text-xl font-semibold text-neutral-600">
+                  <p className="mt-1 text-xl font-semibold text-neutral-200">
                     $128,400
                   </p>
                 </div>
@@ -49,7 +49,7 @@ export function Home(){
                 </div>
                 <div>
                   <p className="text-xs text-neutral-400">Tax Set Aside (30%)</p>
-                  <p className="mt-1 text-xl font-semibold text-neutral-600">
+                  <p className="mt-1 text-xl font-semibold text-neutral-200">
                     $38,520
                   </p>
                 </div>
@@ -60,7 +60,7 @@ export function Home(){
                 </div>
                 <div>
                   <p className="text-xs text-neutral-400">Monthly Expenses</p>
-                  <p className="mt-1 text-xl font-semibold text-neutral-600">
+                  <p className="mt-1 text-xl font-semibold text-neutral-200">
                     $24,800
                   </p>
                 </div>
@@ -71,7 +71,7 @@ export function Home(){
                 </div>
                 <div>
                   <p className="text-xs text-neutral-400">Accounts Receivable</p>
-                  <p className="mt-1 text-xl font-semibold text-neutral-600">
+                  <p className="mt-1 text-xl font-semibold text-neutral-200">
                     $54,120
                   </p>
                 </div>
@@ -82,7 +82,7 @@ export function Home(){
                 </div>
                 <div>
                   <p className="text-xs text-neutral-400">Accounts Payable</p>
-                  <p className="mt-1 text-xl font-semibold text-neutral-600">
+                  <p className="mt-1 text-xl font-semibold text-neutral-200">
                     $18,760
                   </p>
                 </div>
@@ -93,7 +93,7 @@ export function Home(){
                 </div>
                 <div>
                   <p className="text-xs text-neutral-400">Contract Pipeline</p>
-                  <p className="mt-1 text-xl font-semibold text-neutral-600">
+                  <p className="mt-1 text-xl font-semibold text-neutral-200">
                     $312,000
                   </p>
                 </div>

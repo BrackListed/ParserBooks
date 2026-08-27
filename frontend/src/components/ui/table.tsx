@@ -25,6 +25,7 @@ function Table({ className, ...props }: TableProps) {
       className="relative w-full overflow-x-auto"
     >
       <TablePrimitive
+        aria-label="Table"
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}
         {...props}
