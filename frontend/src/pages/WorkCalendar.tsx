@@ -40,16 +40,16 @@ const typeItems = [
   { label: "Overtime", value: "Overtime" },
 ]
 
-// interface workEntriesType{
-//   ID: string
-//   UserID: string
-//   Date: string
-//   Worker: string //change this to evnetually have the type of thee workers in the user's db in the future
-//   Project: string 
-//   Type: string 
-//   Hours: number
-//   UpdatedAt: string
-// }
+interface workEntriesType{
+  id: string
+  user_id: string
+  date: string
+  worker: string //change this to evnetually have the type of thee workers in the user's db in the future
+  project_name: string 
+  type: string 
+  hours: number
+  updated_at: string
+}
 
 export function WorkCalendar() {
   const [date, setDate] = useState<CalendarDate | null>(null)
@@ -57,12 +57,13 @@ export function WorkCalendar() {
   const [project, setProject] = useState("")
   const [type, setType] = useState("Normal")
   const [hours, setHours] = useState(8)
-  // const [workEntries, setWorkEntries] = useState<workEntriesType[]>([])
+  const [workEntries, setWorkEntries] = useState<workEntriesType[]>([])
 
   useEffect(() => {
     const fetchEntriesData = async() => {
       const result = await axios.get(`http://localhost:8080/get/work-entry`)
       console.log(result.data)
+      setWorkEntries(result.data)
     }
     fetchEntriesData()
   }, [])
@@ -210,27 +211,13 @@ export function WorkCalendar() {
                     <TableHead className="text-right">Hours</TableHead>
                   </TableHeader>
                   <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">August 21, 2026</TableCell>
-                      <TableCell>John</TableCell>
-                      <TableCell>ParserBooks Redesign</TableCell>
-                      <TableCell>Normal</TableCell>
-                      <TableCell className="text-right">8</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">August 22, 2026</TableCell>
-                      <TableCell>Jacob</TableCell>
-                      <TableCell>Invoice Builder</TableCell>
-                      <TableCell>Overtime</TableCell>
-                      <TableCell className="text-right">3</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">August 23, 2026</TableCell>
-                      <TableCell>Cillian</TableCell>
-                      <TableCell>Accounts Payable Migration</TableCell>
-                      <TableCell>Normal</TableCell>
-                      <TableCell className="text-right">8</TableCell>
-                    </TableRow>
+                    {workEntries.map((entry) => (<TableRow>
+                      <TableCell className="font-medium">{entry.date}</TableCell>
+                      <TableCell>{entry.worker}</TableCell>
+                      <TableCell>{entry.project_name}</TableCell>
+                      <TableCell>{entry.type}</TableCell>
+                      <TableCell className="text-right">{entry.hours}</TableCell>
+                    </TableRow>))}
                   </TableBody>
                 </Table>
                 <TableCaption>A list of your recent work entries.</TableCaption>
