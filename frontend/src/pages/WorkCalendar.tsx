@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { getLocalTimeZone, type CalendarDate } from "@internationalized/date"
 import { CalendarIcon, Plus } from "lucide-react"
 
@@ -40,13 +40,32 @@ const typeItems = [
   { label: "Overtime", value: "Overtime" },
 ]
 
+// interface workEntriesType{
+//   ID: string
+//   UserID: string
+//   Date: string
+//   Worker: string //change this to evnetually have the type of thee workers in the user's db in the future
+//   Project: string 
+//   Type: string 
+//   Hours: number
+//   UpdatedAt: string
+// }
+
 export function WorkCalendar() {
   const [date, setDate] = useState<CalendarDate | null>(null)
   const [worker, setWorker] = useState("Jacob")
   const [project, setProject] = useState("")
   const [type, setType] = useState("Normal")
   const [hours, setHours] = useState(8)
+  // const [workEntries, setWorkEntries] = useState<workEntriesType[]>([])
 
+  useEffect(() => {
+    const fetchEntriesData = async() => {
+      const result = await axios.get(`http://localhost:8080/get/work-entry`)
+      console.log(result.data)
+    }
+    fetchEntriesData()
+  }, [])
   return (
     <div className="w-screen h-screen">
       <div className="w-full h-full inset-0 absolute -z-50">

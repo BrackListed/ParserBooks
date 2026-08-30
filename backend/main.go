@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,6 +30,7 @@ func main() {
 	})
 	defer db.Close()
 	http.HandleFunc("/add/work-entry", addWorkEntry)
+	http.HandleFunc("/get/work-entry", getWorkEntry)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -36,7 +38,7 @@ func main() {
 func addWorkEntry(w http.ResponseWriter, r *http.Request) {
 	log.Println("Received request!")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
@@ -61,4 +63,39 @@ func addWorkEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(201)
+}
+
+func getWorkEntry(w http.ResponseWriter, r *http.Request) {
+	log.Println("Received request")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	type WorkTypes struct {
+	}
+	type WorkEntry struct {
+		ID        string    `json:"id"`
+		UserID    string    `json:"user_id"`
+		Date      time.Time `json:"date"`
+		Worker    string    `json:"worker"`
+		Project   string    `json:"project_name"`
+		Type      string    `json:"type"`
+		Hours     int       `json:"hours"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+	rows, err := db.Query(r.Context(), "SELECT id, user_id, date, worker, project_name, type, hours, updated_at FROM work_entry WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		println("Error with getting work entries: query ", err.Error())
+		return
+	}
+	entries := []WorkEntry{}
+	for rows.Next() {
+		var e WorkEntry
+		if err := rows.Scan(&e.ID, &e.UserID, &e.Date, &e.Worker, &e.Project, &e.Type, &e.Hours, &e.UpdatedAt); err != nil {
+			println("Error with getting work entries: scan ", err.Error())
+		}
+		entries = append(entries, e)
+	}
+	defer rows.Close()
+	json.NewEncoder(w).Encode(entries)
 }
