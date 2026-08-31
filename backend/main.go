@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -36,7 +35,6 @@ func main() {
 }
 
 func addWorkEntry(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request!")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -56,7 +54,7 @@ func addWorkEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 		return
 	}
-	_, err := db.Exec(r.Context(), "INSERT INTO work_entry(user_id, date, worker, project_name, type, hours) VALUES($1, $2, $3, $4, $5, $6)", uuid.New(), body.Date, body.Worker, body.Project, body.Type, body.Hours)
+	_, err := db.Exec(r.Context(), "INSERT INTO work_entry(user_id, date, worker, project_name, type, hours) VALUES($1, $2, $3, $4, $5, $6)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Date, body.Worker, body.Project, body.Type, body.Hours)
 	if err != nil {
 		log.Println("Database insertion error ", err)
 		http.Error(w, err.Error(), 500)
@@ -66,7 +64,6 @@ func addWorkEntry(w http.ResponseWriter, r *http.Request) {
 }
 
 func getWorkEntry(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")

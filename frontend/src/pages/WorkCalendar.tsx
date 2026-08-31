@@ -208,7 +208,8 @@ export function WorkCalendar() {
                     <TableHead>Person</TableHead>
                     <TableHead>Project name</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Hours</TableHead>
+                    <TableHead>Hours</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableHeader>
                   <TableBody>
                     {workEntries.map((entry) => (<TableRow>
@@ -216,7 +217,8 @@ export function WorkCalendar() {
                       <TableCell>{entry.worker}</TableCell>
                       <TableCell>{entry.project_name}</TableCell>
                       <TableCell>{entry.type}</TableCell>
-                      <TableCell className="text-right">{entry.hours}</TableCell>
+                      <TableCell>{entry.hours}</TableCell>
+                      <TableCell><Button variant={"destructive"}>Delete</Button></TableCell>
                     </TableRow>))}
                   </TableBody>
                 </Table>
