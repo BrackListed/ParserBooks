@@ -47,6 +47,7 @@ function SidebarMinimizeButton() {
 export function AppSidebar() {
   const isHomeActive = typeof window !== "undefined" && window.location.pathname === "/"
   const isCalendarActive = typeof window !== "undefined" && window.location.pathname === "/work-calendar"
+  const isMaintenanceScheduleActive = typeof window !== "undefined" && window.location.pathname === "/maintenance-schedule"
   return (
     <Sidebar>
       <SidebarHeader className="gap-3 p-3">
@@ -105,7 +106,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton>
+              <SidebarMenuButton href = "/maintenance-schedule" isActive={isMaintenanceScheduleActive}>
                 <Wrench />
                 Maintenance Schedule
               </SidebarMenuButton>
