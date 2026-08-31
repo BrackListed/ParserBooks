@@ -28,6 +28,7 @@ import {
   TableCell,
   TableCaption,
 } from "@/components/ui/table"
+import axios from "axios"
 
 const frequencyItems = [
   { label: "Monthly", value: "Monthly" },
@@ -106,10 +107,10 @@ export function MaintenanceSchedule() {
               <BentoGridItem colSpan={3} className="justify-start space-y-4 p-6">
                 <div>
                   <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                    Maintenance
+                    Maintenance Schedule
                   </p>
                   <h2 className="text-2xl font-semibold text-neutral-100">
-                    Add Maintenance Job
+                    Maintenance jobs and planned servicing are tracked here.
                   </h2>
                 </div>
                 <div className="h-px w-full bg-sidebar-border" />
@@ -227,7 +228,7 @@ export function MaintenanceSchedule() {
                   />
                 </div>
 
-                <Button className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
+                <Button onClick={() => addMaintenance(property, client, maintenanceType, frequency, nextDue, assigned, status, notes)} className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
                   <Plus className="size-4" />
                   Add Maintenance
                 </Button>
@@ -285,4 +286,12 @@ export function MaintenanceSchedule() {
       </SidebarProvider>
     </div>
   )
+
+  async function addMaintenance(property: string, client: string, type: string, frequency: string, nextDue: CalendarDate | null, assigned: string, status: string, notes: string){
+    try{
+        await axios.post("http://localhost:8080/add/maintenance-schedule", {property: property, client: client, type: type, frequency: frequency, nextDue: nextDue?.toString(), assigned: assigned, status: status, notes: notes})
+    } catch(err){
+        console.error(err)
+    }
+  }
 }

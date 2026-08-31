@@ -29,6 +29,7 @@ func main() {
 	})
 	defer db.Close()
 	http.HandleFunc("/add/work-entry", addWorkEntry)
+	http.HandleFunc("/add/maintenance-schedule", addMaintenanceEntry)
 	http.HandleFunc("/get/work-entry", getWorkEntry)
 	http.HandleFunc("/delete/work-entry/{id}", deleteWorkEntry)
 	fmt.Println("Server listening on port 8080")
@@ -36,7 +37,7 @@ func main() {
 }
 
 func addWorkEntry(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "localhost:5173")
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	if r.Method == http.MethodOptions {
@@ -64,8 +65,40 @@ func addWorkEntry(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(201)
 }
 
+func addMaintenanceEntry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, POST")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	var body struct {
+		Property  string `json:"property"`
+		Client    string `json:"client"`
+		Type      string `json:"type"`
+		Frequency string `json:"frequency"`
+		NextDue   string `json:"nextdue"`
+		Assigned  string `json:"assigned"`
+		Status    string `json:"status"`
+		Notes     string `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		log.Println("Error encoding ", err.Error())
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	_, err := db.Exec(r.Context(), "INSERT INTO maintenance(user_id, property, client, type, frequency, next_due, assigned, status, notes) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Property, body.Client, body.Type, body.Frequency, body.NextDue, body.Assigned, body.Status, body.Notes)
+	if err != nil {
+		log.Println("Database insertion error: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.WriteHeader(201)
+}
+
 func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "localhost:5173")
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	if r.Method == http.MethodOptions {
@@ -83,7 +116,7 @@ func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
 }
 
 func getWorkEntry(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	type WorkTypes struct {
