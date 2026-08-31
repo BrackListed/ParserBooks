@@ -30,12 +30,13 @@ func main() {
 	defer db.Close()
 	http.HandleFunc("/add/work-entry", addWorkEntry)
 	http.HandleFunc("/get/work-entry", getWorkEntry)
+	http.HandleFunc("/delete/work-entry/{id}", deleteWorkEntry)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func addWorkEntry(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	if r.Method == http.MethodOptions {
@@ -58,6 +59,24 @@ func addWorkEntry(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Database insertion error ", err)
 		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.WriteHeader(201)
+}
+
+func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	id := r.PathValue("id")
+	_, err := db.Exec(r.Context(), "DELETE FROM work_entry WHERE id = $1", id)
+	if err != nil {
+		println("Error deleting from db", err.Error())
+		http.Error(w, err.Error(), 400)
 		return
 	}
 	w.WriteHeader(201)

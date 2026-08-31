@@ -218,7 +218,7 @@ export function WorkCalendar() {
                       <TableCell>{entry.project_name}</TableCell>
                       <TableCell>{entry.type}</TableCell>
                       <TableCell>{entry.hours}</TableCell>
-                      <TableCell><Button variant={"destructive"}>Delete</Button></TableCell>
+                      <TableCell><Button onClick={() => deleteEntry(entry.id)} variant={"destructive"}>Delete</Button></TableCell>
                     </TableRow>))}
                   </TableBody>
                 </Table>
@@ -239,6 +239,16 @@ export function WorkCalendar() {
       }
     } catch (err){
       console.error('Server Error: ', err)
+    }
+  }
+  async function deleteEntry(id: string){
+    const result = await axios.delete(`http://localhost:8080/delete/work-entry/${id}`)
+    try{
+        if(result.status === 201){
+          console.log("Work entry saved")
+        }
+    } catch (err){
+      console.error("Server error: ", err)
     }
   }
 }
