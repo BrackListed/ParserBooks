@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { getLocalTimeZone, type CalendarDate } from "@internationalized/date"
 import { CalendarIcon, Plus } from "lucide-react"
 
@@ -47,31 +47,19 @@ const statusItems = [
 
 interface maintenanceEntryType {
   id: string
+  user_id: string
   property: string
   client: string
   type: string
   lastService: string
   frequency: string
-  nextDue: string
+  next_due: string
   assigned: string
   status: string
   notes: string
 }
 
-const placeholderEntries: maintenanceEntryType[] = [
-  {
-    id: "1",
-    property: "Riverside Apartments",
-    client: "Acme Property Group",
-    type: "HVAC Servicing",
-    lastService: "2026-05-12",
-    nextDue: "2026-08-12",
-    frequency: "Quarterly",
-    assigned: "Cillian",
-    status: "Upcoming",
-    notes: "Check filters and coolant levels",
-  },
-]
+
 
 export function MaintenanceSchedule() {
   const [property, setProperty] = useState("")
@@ -82,8 +70,14 @@ export function MaintenanceSchedule() {
   const [assigned, setAssigned] = useState("")
   const [status, setStatus] = useState("Upcoming")
   const [notes, setNotes] = useState("")
-  const [maintenanceEntries] = useState<maintenanceEntryType[]>(placeholderEntries)
-
+  const [maintenanceEntries, setMaintenanceEntries] = useState<maintenanceEntryType[]>([])
+  useEffect(() => {
+    const fetchMaintenanceData = async() => {
+      const result = await axios.get("http://localhost:8080/get/maintenance")
+      setMaintenanceEntries(result.data)
+    }
+    fetchMaintenanceData()
+  }, [])
   return (
     <div className="w-screen h-screen">
       <div className="w-full h-full inset-0 absolute -z-50">
@@ -251,7 +245,6 @@ export function MaintenanceSchedule() {
                     </TableHead>
                     <TableHead>Client</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Last Service</TableHead>
                     <TableHead>Freq</TableHead>
                     <TableHead>Next Due</TableHead>
                     <TableHead>Assigned</TableHead>
@@ -265,9 +258,8 @@ export function MaintenanceSchedule() {
                         <TableCell className="font-medium">{entry.property}</TableCell>
                         <TableCell>{entry.client}</TableCell>
                         <TableCell>{entry.type}</TableCell>
-                        <TableCell>{entry.lastService}</TableCell>
                         <TableCell>{entry.frequency}</TableCell>
-                        <TableCell>{entry.nextDue}</TableCell>
+                        <TableCell>{entry.next_due}</TableCell>
                         <TableCell>{entry.assigned}</TableCell>
                         <TableCell>{entry.status}</TableCell>
                         <TableCell>{entry.notes}</TableCell>

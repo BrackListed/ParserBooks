@@ -31,6 +31,7 @@ func main() {
 	http.HandleFunc("/add/work-entry", addWorkEntry)
 	http.HandleFunc("/add/maintenance-schedule", addMaintenanceEntry)
 	http.HandleFunc("/get/work-entry", getWorkEntry)
+	http.HandleFunc("/get/maintenance", getMaintenanceEntry)
 	http.HandleFunc("/delete/work-entry/{id}", deleteWorkEntry)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -115,12 +116,46 @@ func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(201)
 }
 
+func getMaintenanceEntry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	type MaintenanceEntry struct {
+		ID        string `json:"id"`
+		UserID    string `json:"user_id"`
+		Property  string `json:"property"`
+		Client    string `json:"client"`
+		Type      string `json:"type"`
+		Frequency string `json:"frequency"`
+		NextDue   string `json:"next_due"`
+		Assigned  string `json:"assigned"`
+		Status    string `json:"status"`
+		Notes     string `json:"notes"`
+		UpdatedAt string `json:"updated_at"`
+	}
+	rows, err := db.Query(r.Context(), "SELECT id, user_id, property, client, type, frequency, next_due, assigned, status, notes FROM maintenance WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	entries := []MaintenanceEntry{}
+	for rows.Next() {
+		var e MaintenanceEntry
+		rows.Scan(&e.ID, &e.UserID, &e.Property, &e.Client, &e.Type, &e.Frequency, &e.NextDue, &e.Assigned, &e.Status, &e.Notes)
+		entries = append(entries, e)
+	}
+	defer rows.Close()
+	json.NewEncoder(w).Encode(entries)
+}
+
 func getWorkEntry(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	type WorkTypes struct {
-	}
 	type WorkEntry struct {
 		ID        string    `json:"id"`
 		UserID    string    `json:"user_id"`
