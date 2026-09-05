@@ -33,6 +33,7 @@ func main() {
 	http.HandleFunc("/get/work-entry", getWorkEntry)
 	http.HandleFunc("/get/maintenance", getMaintenanceEntry)
 	http.HandleFunc("/delete/work-entry/{id}", deleteWorkEntry)
+	http.HandleFunc("/delete/maintenance-schedule/{id}", deleteMaintenanceEntry)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -109,7 +110,25 @@ func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	_, err := db.Exec(r.Context(), "DELETE FROM work_entry WHERE id = $1", id)
 	if err != nil {
-		println("Error deleting from db", err.Error())
+		println("Error deleting work entry from db", err.Error())
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	w.WriteHeader(201)
+}
+
+func deleteMaintenanceEntry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	id := r.PathValue("id")
+	_, err := db.Exec(r.Context(), "DELETE FROM maintenance WHERE id = $1", id)
+	if err != nil {
+		println("Error deleting maintenance entry from db ", err.Error())
 		http.Error(w, err.Error(), 400)
 		return
 	}

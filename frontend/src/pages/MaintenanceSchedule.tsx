@@ -264,7 +264,7 @@ export function MaintenanceSchedule() {
                         <TableCell>{entry.status}</TableCell>
                         <TableCell>{entry.notes}</TableCell>
                         <TableCell>
-                          <Button variant={"destructive"}>Delete</Button>
+                          <Button onClick={() => deleteEntry(entry.id)} variant={"destructive"}>Delete</Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -284,6 +284,14 @@ export function MaintenanceSchedule() {
         await axios.post("http://localhost:8080/add/maintenance-schedule", {property: property, client: client, type: type, frequency: frequency, nextDue: nextDue?.toString(), assigned: assigned, status: status, notes: notes})
     } catch(err){
         console.error(err)
+    }
+  }
+
+  async function deleteEntry(id: string){
+    try{
+      await axios.delete(`http://localhost:8080/delete/maintenance-schedule/${id}`)
+    } catch(err){
+      console.error(err)
     }
   }
 }

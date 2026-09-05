@@ -62,7 +62,6 @@ export function WorkCalendar() {
   useEffect(() => {
     const fetchEntriesData = async() => {
       const result = await axios.get(`http://localhost:8080/get/work-entry`)
-      console.log(result.data)
       setWorkEntries(result.data)
     }
     fetchEntriesData()
