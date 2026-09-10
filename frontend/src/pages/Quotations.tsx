@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { Plus } from "lucide-react"
+import { getLocalTimeZone, type CalendarDate } from "@internationalized/date"
+import { CalendarIcon, Plus } from "lucide-react"
 
 import DotGrid from "@/assets/DotGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -7,6 +8,8 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { BentoGrid, BentoGridItem } from "@/ui/bento-grid"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverTrigger } from "@/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -46,7 +49,7 @@ interface quotationEntryType {
   user_id: string
   date: string
   client: string
-  projectAddress: string
+  project: string
   status: string
   amount: number
   reference: string
@@ -56,8 +59,9 @@ interface quotationEntryType {
 }
 
 export function Quotations() {
+  const [date, setDate] = useState<CalendarDate | null>(null)
   const [client, setClient] = useState("")
-  const [projectAddress, setProjectAddress] = useState("")
+  const [project, setProject] = useState("")
   const [status, setStatus] = useState("Pending for Quote")
   const [amount, setAmount] = useState(0)
   const [reference, setReference] = useState("")
@@ -107,6 +111,29 @@ export function Quotations() {
                 <div className="h-px w-full bg-sidebar-border" />
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-neutral-300">Date</label>
+                    <PopoverTrigger>
+                      <Button
+                        variant="outline"
+                        data-empty={!date}
+                        className="justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
+                      >
+                        <CalendarIcon />
+                        {date ? (
+                          date
+                            .toDate(getLocalTimeZone())
+                            .toLocaleDateString(undefined, { dateStyle: "long" })
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                      <Popover className="w-auto p-0">
+                        <Calendar value={date} onChange={setDate} />
+                      </Popover>
+                    </PopoverTrigger>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Client</label>
                     <Input
                       placeholder="Client"
@@ -119,8 +146,8 @@ export function Quotations() {
                     <label className="text-sm text-neutral-300">Project / Address</label>
                     <Input
                       placeholder="Project / Address"
-                      value={projectAddress}
-                      onChange={(e) => setProjectAddress(e.target.value)}
+                      value={project}
+                      onChange={(e) => setProject(e.target.value)}
                     />
                   </div>
 
@@ -217,7 +244,7 @@ export function Quotations() {
 
                 <Button
                   onClick={() =>
-                    addQuotation(client, projectAddress, status, amount, reference, sentVia, email, phone, notes)
+                    addQuotation(date, client, project, status, amount, reference, sentVia, email, phone, notes)
                   }
                   className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500"
                 >
@@ -256,7 +283,7 @@ export function Quotations() {
                       <TableRow key={entry.id}>
                         <TableCell className="font-medium">{entry.date}</TableCell>
                         <TableCell>{entry.client}</TableCell>
-                        <TableCell>{entry.projectAddress}</TableCell>
+                        <TableCell>{entry.project}</TableCell>
                         <TableCell>{entry.status}</TableCell>
                         <TableCell>{entry.amount}</TableCell>
                         <TableCell>{entry.reference}</TableCell>
@@ -280,8 +307,9 @@ export function Quotations() {
   )
 
   async function addQuotation(
+    date: CalendarDate | null,
     client: string,
-    projectAddress: string,
+    project: string,
     status: string,
     amount: number,
     reference: string,
@@ -292,8 +320,9 @@ export function Quotations() {
   ) {
     try {
       await axios.post("http://localhost:8080/add/quotation", {
+        date: date?.toString(),
         client: client,
-        projectAddress: projectAddress,
+        project: project,
         status: status,
         amount: Number(amount),
         reference: reference,
