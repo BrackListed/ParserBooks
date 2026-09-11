@@ -338,7 +338,7 @@ export function Quotations() {
 
   async function deleteEntry(id: string) {
     try {
-      await axios.delete(`http://localhost:8080/delete/quotation/${id}`)
+      await axios.delete(`http://localhost:8080/delete/quotations/${id}`)
     } catch (err) {
       console.error(err)
     }
