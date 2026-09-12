@@ -39,6 +39,7 @@ func main() {
 	http.HandleFunc("/delete/work-entry/{id}", deleteWorkEntry)
 	http.HandleFunc("/delete/maintenance-schedule/{id}", deleteMaintenanceEntry)
 	http.HandleFunc("/delete/quotations/{id}", deleteQuotationsEntry)
+	http.HandleFunc("/delete/accounts-payable/{id}", deleteBillsEntry)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -221,6 +222,25 @@ func deleteQuotationsEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(201)
+}
+
+func deleteBillsEntry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Header", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	id := r.PathValue("id")
+	_, err := db.Exec(r.Context(), "DELETE FROM bills WHERE id = $1", id)
+	if err != nil {
+		log.Println("Error deleting from accounts payable: ", err.Error())
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	w.WriteHeader(201)
+
 }
 
 func getMaintenanceEntry(w http.ResponseWriter, r *http.Request) {
