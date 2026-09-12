@@ -162,7 +162,7 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton href="/accounts-payable" isActive={isAccountsPayableActive}>
                 <Wallet />
-                Accounts Payable
+                Accounts Payable(Bills)
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

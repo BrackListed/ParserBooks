@@ -33,26 +33,23 @@ const priorityItems = [
   { label: "Low", value: "Low" },
   { label: "Moderate", value: "Moderate" },
   { label: "High", value: "High" },
-  { label: "Urgent", value: "Urgent" },
 ]
 
 const statusItems = [
   { label: "Unpaid", value: "Unpaid" },
-  { label: "Partially Paid", value: "Partially Paid" },
   { label: "Paid", value: "Paid" },
-  { label: "Overdue", value: "Overdue" },
 ]
 
 interface billEntryType {
   id: string
   user_id: string
-  dueDate: string
+  due: string
   supplier: string
   description: string
   amount: number
   priority: string
   status: string
-  paidDate: string
+  paid_date: string
 }
 
 export function AccountsPayable() {
@@ -260,13 +257,13 @@ export function AccountsPayable() {
                   <TableBody>
                     {billEntries.map((entry) => (
                       <TableRow key={entry.id}>
-                        <TableCell className="font-medium">{entry.dueDate}</TableCell>
+                        <TableCell className="font-medium">{entry.due}</TableCell>
                         <TableCell>{entry.supplier}</TableCell>
                         <TableCell>{entry.description}</TableCell>
                         <TableCell>{entry.amount}</TableCell>
                         <TableCell>{entry.priority}</TableCell>
                         <TableCell>{entry.status}</TableCell>
-                        <TableCell>{entry.paidDate}</TableCell>
+                        <TableCell>{entry.paid_date}</TableCell>
                         <TableCell>
                           <Button onClick={() => deleteEntry(entry.id)} variant={"destructive"}>Delete</Button>
                         </TableCell>
