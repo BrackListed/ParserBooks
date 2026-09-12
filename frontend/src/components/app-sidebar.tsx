@@ -49,6 +49,7 @@ export function AppSidebar() {
   const isCalendarActive = typeof window !== "undefined" && window.location.pathname === "/work-calendar"
   const isMaintenanceScheduleActive = typeof window !== "undefined" && window.location.pathname === "/maintenance-schedule"
   const isQuotationsActive = typeof window !== "undefined" && window.location.pathname === "/quotations"
+  const isAccountsPayableActive = typeof window !== "undefined" && window.location.pathname === "/accounts-payable"
   return (
     <Sidebar>
       <SidebarHeader className="gap-3 p-3">
@@ -159,7 +160,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarMenu className="gap-3">
             <SidebarMenuItem>
-              <SidebarMenuButton>
+              <SidebarMenuButton href="/accounts-payable" isActive={isAccountsPayableActive}>
                 <Wallet />
                 Accounts Payable
               </SidebarMenuButton>

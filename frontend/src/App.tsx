@@ -3,6 +3,7 @@ import { Home } from "./pages/Home";
 import { WorkCalendar } from "./pages/WorkCalendar";
 import { MaintenanceSchedule } from "./pages/MaintenanceSchedule";
 import { Quotations } from "./pages/Quotations";
+import { AccountsPayable } from "./pages/AccountsPayable";
 
 export default function App(){
   return(
@@ -12,6 +13,7 @@ export default function App(){
         <Route path = "/work-calendar" element={<WorkCalendar/>}></Route>
         <Route path = "/maintenance-schedule" element={<MaintenanceSchedule/>}></Route>
         <Route path = "/quotations" element={<Quotations/>}/>
+        <Route path = "/accounts-payable" element={<AccountsPayable/>}/>
       </Routes>
     </BrowserRouter>
   )
