@@ -32,6 +32,7 @@ func main() {
 	http.HandleFunc("/add/maintenance-schedule", addMaintenanceEntry)
 	http.HandleFunc("/add/quotation", addQuotationsEntry)
 	http.HandleFunc("/add/accounts-payable", addBillEntry)
+	http.HandleFunc("/add/expenses", addExpensesEntry)
 	http.HandleFunc("/get/work-entry", getWorkEntry)
 	http.HandleFunc("/get/maintenance", getMaintenanceEntry)
 	http.HandleFunc("/get/quotations", getQuotationsEntry)
@@ -170,9 +171,40 @@ func addBillEntry(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(201)
 }
 
-func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
+func addExpensesEntry(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	var body struct {
+		Date        string `json:"date"`
+		Project     string `json:"project"`
+		Category    string `json:"category"`
+		Supplier    string `json:"supplier"`
+		Description string `json:"description"`
+		Amount      int    `json:"amount"`
+		GstType     string `json:"gstType"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		log.Println("Error decoding body: ", err.Error())
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	_, err := db.Exec(r.Context(), "INSERT INTO expenses(user_id, date, project, category, supplier, description, amount, gst_type) VALUES($1, $2, $3, $4, $5, $6, $7, $8)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Date, body.Project, body.Category, body.Supplier, body.Description, body.Amount, body.GstType)
+	if err != nil {
+		log.Println("Error inserting to the db: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.WriteHeader(201)
+}
+
+func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)

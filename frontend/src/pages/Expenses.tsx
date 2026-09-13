@@ -66,7 +66,7 @@ export function Expenses() {
   const [supplier, setSupplier] = useState("")
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState(0)
-  const [gst, setGst] = useState("Inc GST")
+  const [gstType, setGstType] = useState("Inc GST")
   const [expenseEntries, setExpenseEntries] = useState<expenseEntryType[]>([])
 
   useEffect(() => {
@@ -104,7 +104,7 @@ export function Expenses() {
               <BentoGridItem colSpan={3} className="justify-start space-y-4 p-6">
                 <div>
                   <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                    Purchases
+                    Expenses
                   </p>
                   <h2 className="text-2xl font-semibold text-neutral-100">
                     Add Operating Expense
@@ -211,8 +211,8 @@ export function Expenses() {
                     <label className="text-sm text-neutral-300">GST</label>
                     <Select
                       placeholder="GST"
-                      value={gst}
-                      onChange={(gst) => setGst(gst!.toString())}
+                      value={gstType}
+                      onChange={(gst) => setGstType(gst!.toString())}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue />
@@ -232,7 +232,7 @@ export function Expenses() {
 
                 <Button
                   onClick={() =>
-                    addExpense(date, project, category, supplier, description, amount, gst)
+                    addExpense(date, project, category, supplier, description, amount, gstType)
                   }
                   className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500"
                 >
@@ -310,17 +310,17 @@ export function Expenses() {
     supplier: string,
     description: string,
     amount: number,
-    gst: string
+    gstType: string
   ) {
     try {
-      await axios.post("http://localhost:8080/add/expense", {
+      await axios.post("http://localhost:8080/add/expenses", {
         date: date?.toString(),
         project: project,
         category: category,
         supplier: supplier,
         description: description,
         amount: Number(amount),
-        gst: gst,
+        gstType: gstType,
       })
     } catch (err) {
       console.error(err)
@@ -329,7 +329,7 @@ export function Expenses() {
 
   async function deleteEntry(id: string) {
     try {
-      await axios.delete(`http://localhost:8080/delete/expense/${id}`)
+      await axios.delete(`http://localhost:8080/delete/expenses/${id}`)
     } catch (err) {
       console.error(err)
     }
