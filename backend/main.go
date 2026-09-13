@@ -38,6 +38,7 @@ func main() {
 	http.HandleFunc("/get/maintenance", getMaintenanceEntry)
 	http.HandleFunc("/get/quotations", getQuotationsEntry)
 	http.HandleFunc("/get/accounts-payable", getBills)
+	http.HandleFunc("/get/expenses", getExpenses)
 	http.HandleFunc("/delete/work-entry/{id}", deleteWorkEntry)
 	http.HandleFunc("/delete/maintenance-schedule/{id}", deleteMaintenanceEntry)
 	http.HandleFunc("/delete/quotations/{id}", deleteQuotationsEntry)
@@ -422,6 +423,45 @@ func getBills(w http.ResponseWriter, r *http.Request) {
 		var e billsEntry
 		if err := rows.Scan(&e.ID, &e.UserID, &e.Due, &e.Supplier, &e.Description, &e.Amount, &e.Priority, &e.Status, &e.PaidDate, &e.UpdatedAt); err != nil {
 			log.Println("Error scanning rows: ", err.Error())
+		}
+		entries = append(entries, e)
+	}
+	defer rows.Close()
+	json.NewEncoder(w).Encode(entries)
+}
+
+func getExpenses(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	type expensesType struct {
+		ID          string    `json:"id"`
+		UserID      string    `json:"user_id"`
+		Date        string    `json:"date"`
+		Project     string    `json:"project"`
+		Category    string    `json:"category"`
+		Supplier    string    `json:"supplier"`
+		Description string    `json:"description"`
+		GstType     string    `json:"gst_type"`
+		UpdatedAt   time.Time `json:"updated_at"`
+		ExGST       int       `json:"ex_gst"`
+		GST         int       `json:"gst"`
+		IncGST      int       `json:"inc_gst"`
+	}
+	entries := []expensesType{}
+	rows, err := db.Query(r.Context(), "SELECT id, user_id, date, project, category, supplier, description, gst_type, updated_at, ex_gst, gst, inc_gst FROM expenses WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
+	if err != nil {
+		log.Println("Error retrieving data: ", err.Error())
+		http.Error(w, err.Error(), 500)
+	}
+	for rows.Next() {
+		var e expensesType
+		if err := rows.Scan(&e.ID, &e.UserID, &e.Date, &e.Project, &e.Category, &e.Supplier, &e.Description, &e.GstType, &e.UpdatedAt, &e.ExGST, &e.GST, &e.IncGST); err != nil {
+			log.Println("Error scanning data: ", err.Error())
 		}
 		entries = append(entries, e)
 	}

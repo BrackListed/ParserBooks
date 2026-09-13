@@ -54,9 +54,11 @@ interface expenseEntryType {
   category: string
   supplier: string
   description: string
-  exGst: number
+  gst_type: string
+  ex_gst: number
   gst: number
-  incGst: number
+  inc_gst: number
+  updated_at: Date
 }
 
 export function Expenses() {
@@ -72,14 +74,15 @@ export function Expenses() {
   useEffect(() => {
     const fetchExpensesData = async () => {
       const result = await axios.get("http://localhost:8080/get/expenses")
+      console.log(result.data)
       setExpenseEntries(result.data)
     }
     fetchExpensesData()
   }, [])
 
-  const totalExGst = expenseEntries.reduce((sum, entry) => sum + entry.exGst, 0)
+  const totalExGst = expenseEntries.reduce((sum, entry) => sum + entry.ex_gst, 0)
   const totalGst = expenseEntries.reduce((sum, entry) => sum + entry.gst, 0)
-  const totalIncGst = expenseEntries.reduce((sum, entry) => sum + entry.incGst, 0)
+  const totalIncGst = expenseEntries.reduce((sum, entry) => sum + entry.inc_gst, 0)
 
   return (
     <div className="w-screen h-screen">
@@ -273,9 +276,9 @@ export function Expenses() {
                         <TableCell>{entry.category}</TableCell>
                         <TableCell>{entry.supplier}</TableCell>
                         <TableCell>{entry.description}</TableCell>
-                        <TableCell>${entry.exGst.toFixed(2)}</TableCell>
+                        <TableCell>${entry.ex_gst.toFixed(2)}</TableCell>
                         <TableCell>${entry.gst.toFixed(2)}</TableCell>
-                        <TableCell>${entry.incGst.toFixed(2)}</TableCell>
+                        <TableCell>${entry.inc_gst.toFixed(2)}</TableCell>
                         <TableCell>
                           <Button onClick={() => deleteEntry(entry.id)} variant={"destructive"}>Delete</Button>
                         </TableCell>
