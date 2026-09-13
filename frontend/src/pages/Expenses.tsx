@@ -74,7 +74,6 @@ export function Expenses() {
   useEffect(() => {
     const fetchExpensesData = async () => {
       const result = await axios.get("http://localhost:8080/get/expenses")
-      console.log(result.data)
       setExpenseEntries(result.data)
     }
     fetchExpensesData()
