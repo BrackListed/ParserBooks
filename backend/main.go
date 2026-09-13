@@ -182,13 +182,13 @@ func addExpensesEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Date        string `json:"date"`
-		Project     string `json:"project"`
-		Category    string `json:"category"`
-		Supplier    string `json:"supplier"`
-		Description string `json:"description"`
-		Amount      int    `json:"amount"`
-		GstType     string `json:"gstType"`
+		Date        string  `json:"date"`
+		Project     string  `json:"project"`
+		Category    string  `json:"category"`
+		Supplier    string  `json:"supplier"`
+		Description string  `json:"description"`
+		Amount      float64 `json:"amount"`
+		GstType     string  `json:"gstType"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Println("Error decoding body: ", err.Error())
@@ -197,12 +197,12 @@ func addExpensesEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	var ex_gst, inc_gst, gst float64
 	if body.GstType == "Ex GST" {
-		ex_gst = float64(body.Amount)
-		gst = (float64(body.Amount) * (10.0 / 100.0))
-		inc_gst = float64(body.Amount) + gst
+		ex_gst = math.Round(body.Amount*100) / 100
+		gst = math.Round((body.Amount*0.1)*100) / 100
+		inc_gst = math.Round((ex_gst+gst)*100) / 100
 	} else {
-		inc_gst = float64(body.Amount)
-		ex_gst = math.Round((float64(body.Amount)/1.1)*100) / 100
+		inc_gst = math.Round(body.Amount*100) / 100
+		ex_gst = math.Round((body.Amount/1.1)*100) / 100
 		gst = math.Round((inc_gst-ex_gst)*100) / 100
 	}
 	_, err := db.Exec(r.Context(), "INSERT INTO expenses(user_id, date, project, category, supplier, description, gst_type, ex_gst, inc_gst, gst) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Date, body.Project, body.Category, body.Supplier, body.Description, body.GstType, ex_gst, inc_gst, gst)
@@ -448,9 +448,9 @@ func getExpenses(w http.ResponseWriter, r *http.Request) {
 		Description string    `json:"description"`
 		GstType     string    `json:"gst_type"`
 		UpdatedAt   time.Time `json:"updated_at"`
-		ExGST       int       `json:"ex_gst"`
-		GST         int       `json:"gst"`
-		IncGST      int       `json:"inc_gst"`
+		ExGST       float64   `json:"ex_gst"`
+		GST         float64   `json:"gst"`
+		IncGST      float64   `json:"inc_gst"`
 	}
 	entries := []expensesType{}
 	rows, err := db.Query(r.Context(), "SELECT id, user_id, date, project, category, supplier, description, gst_type, updated_at, ex_gst, gst, inc_gst FROM expenses WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
