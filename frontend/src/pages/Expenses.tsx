@@ -41,7 +41,7 @@ const categoryItems = [
   { label: "Other", value: "Other" },
 ]
 
-const gstItems = [
+const gstTypeItems = [
   { label: "Inc GST", value: "Inc GST" },
   { label: "Ex GST", value: "Ex GST" },
 ]
@@ -208,7 +208,7 @@ export function Expenses() {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">GST</label>
+                    <label className="text-sm text-neutral-300">GST Type</label>
                     <Select
                       placeholder="GST"
                       value={gstType}
@@ -219,7 +219,7 @@ export function Expenses() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {gstItems.map((item) => (
+                          {gstTypeItems.map((item) => (
                             <SelectItem key={item.value} id={item.value}>
                               {item.label}
                             </SelectItem>

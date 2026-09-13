@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"time"
@@ -193,7 +194,17 @@ func addExpensesEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 		return
 	}
-	_, err := db.Exec(r.Context(), "INSERT INTO expenses(user_id, date, project, category, supplier, description, amount, gst_type) VALUES($1, $2, $3, $4, $5, $6, $7, $8)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Date, body.Project, body.Category, body.Supplier, body.Description, body.Amount, body.GstType)
+	var ex_gst, inc_gst, gst float64
+	if body.GstType == "Ex GST" {
+		ex_gst = float64(body.Amount)
+		gst = (float64(body.Amount) * (10.0 / 100.0))
+		inc_gst = float64(body.Amount) + gst
+	} else {
+		inc_gst = float64(body.Amount)
+		ex_gst = math.Round((float64(body.Amount)/1.1)*100) / 100
+		gst = math.Round((inc_gst-ex_gst)*100) / 100
+	}
+	_, err := db.Exec(r.Context(), "INSERT INTO expenses(user_id, date, project, category, supplier, description, gst_type, ex_gst, inc_gst, gst) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Date, body.Project, body.Category, body.Supplier, body.Description, body.GstType, ex_gst, inc_gst, gst)
 	if err != nil {
 		log.Println("Error inserting to the db: ", err.Error())
 		http.Error(w, err.Error(), 500)

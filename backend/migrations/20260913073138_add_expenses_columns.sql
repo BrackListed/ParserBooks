@@ -1,0 +1,10 @@
+-- +goose Up
+ALTER TABLE expenses
+ADD ex_gst INT, 
+ADD gst INT,
+ADD inc_gst INT;
+-- +goose Down
+ALTER TABLE expenses
+DROP COLUMN ex_gst, 
+DROP COLUMN gst,
+DROP COLUMN inc_gst;
