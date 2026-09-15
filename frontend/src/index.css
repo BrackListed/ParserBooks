@@ -116,3 +116,27 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+html {
+  scrollbar-color: var(--app-surface-border-hover) var(--app-bg);
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--app-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--app-surface-border-hover);
+  border-radius: 8px;
+  border: 2px solid var(--app-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--app-accent);
+}

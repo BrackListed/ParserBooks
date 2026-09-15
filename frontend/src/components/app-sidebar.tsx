@@ -9,7 +9,6 @@ import {
   FileText,
   FileSearch,
   Mail,
-  FilePlus2,
   Receipt,
   Wallet,
   CreditCard,
@@ -51,6 +50,7 @@ export function AppSidebar() {
   const isQuotationsActive = typeof window !== "undefined" && window.location.pathname === "/quotations"
   const isAccountsPayableActive = typeof window !== "undefined" && window.location.pathname === "/accounts-payable"
   const isExpensesActive = typeof window !== "undefined" && window.location.pathname === "/expenses"
+  const isPayrollActive = typeof window !== "undefined" && window.location.pathname === "/payroll"
   return (
     <Sidebar>
       <SidebarHeader className="gap-3 p-3">
@@ -135,15 +135,9 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton>
+              <SidebarMenuButton href="http://gmail.com">
                 <Mail />
                 Gmail Inbox
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <FilePlus2 />
-                Invoice Builder
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -187,7 +181,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarMenu className="gap-3">
             <SidebarMenuItem>
-              <SidebarMenuButton>
+              <SidebarMenuButton href = "/payroll" isActive={isPayrollActive}>
                 <Banknote />
                 Payroll
               </SidebarMenuButton>

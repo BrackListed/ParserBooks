@@ -5,6 +5,7 @@ import { MaintenanceSchedule } from "./pages/MaintenanceSchedule";
 import { Quotations } from "./pages/Quotations";
 import { AccountsPayable } from "./pages/AccountsPayable";
 import { Expenses } from "./pages/Expenses";
+import { Payroll } from "./pages/Payroll";
 
 export default function App(){
   return(
@@ -16,6 +17,7 @@ export default function App(){
         <Route path = "/quotations" element={<Quotations/>}/>
         <Route path = "/accounts-payable" element={<AccountsPayable/>}/>
         <Route path = "/expenses" element={<Expenses/>}/>
+        <Route path = "/payroll" element={<Payroll/>}/>
       </Routes>
     </BrowserRouter>
   )
