@@ -399,11 +399,11 @@ export function Payroll() {
   async function addEmployee(name: string, normalRate: number, otRate: number, paygPercent: number, superPercent: number) {
     try {
       await axios.post("http://localhost:8080/add/employees", {
-        name: name,
+        employee: name,
         normalRate: Number(normalRate),
         otRate: Number(otRate),
-        paygPercent: Number(paygPercent),
-        superPercent: Number(superPercent),
+        payg: Number(paygPercent),
+        super: Number(superPercent),
       })
     } catch (err) {
       console.error(err)

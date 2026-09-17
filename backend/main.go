@@ -215,6 +215,34 @@ func addExpensesEntry(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(201)
 }
 
+func addEmployees(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	var body struct {
+		Employee   string `json:"employee"`
+		NormalRate string `json:"normalRate"`
+		OTRate     string `json:"otRate"`
+		Payg       int    `json:"payg"`
+		Super      int    `json:"super"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		log.Println("Error decoding: ", err.Error())
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	if _, err := db.Exec(r.Context(), "INSERT INTO employees(user_id, employee, normal_rate, ot_rate, payg, super) VALUES($1, $2, $3, $4, $5, $6)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Employee, body.NormalRate, body.OTRate, body.Payg, body.Super); err != nil {
+		log.Println("Error inserting into table employees: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.WriteHeader(201)
+}
+
 func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
