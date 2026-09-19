@@ -21,19 +21,19 @@ import axios from "axios"
 interface employeeEntryType {
   id: string
   user_id: string
-  name: string
-  normalRate: number
-  otRate: number
-  paygPercent: number
-  superPercent: number
+  employee: string
+  normal_rate: number
+  ot_rate: number
+  payg: number
+  super: number
 }
 
 export function Payroll() {
   const [name, setName] = useState("")
-  const [normalRate, setNormalRate] = useState(0)
-  const [otRate, setOtRate] = useState(0)
-  const [payg, setPayg] = useState(0)
-  const [superPercent, setSuperPercent] = useState(0)
+  const [normalRate, setNormalRate] = useState(25.99)
+  const [otRate, setOtRate] = useState(38.98)
+  const [payg, setPayg] = useState(19)
+  const [superPercent, setSuperPercent] = useState(11)
   const [employeeEntries, setEmployeeEntries] = useState<employeeEntryType[]>([])
 
   useEffect(() => {
@@ -158,11 +158,11 @@ export function Payroll() {
                   <TableBody>
                     {employeeEntries.map((entry) => (
                       <TableRow key={entry.id}>
-                        <TableCell className="font-medium">{entry.name}</TableCell>
-                        <TableCell>${entry.normalRate.toFixed(2)}</TableCell>
-                        <TableCell>${entry.otRate.toFixed(2)}</TableCell>
-                        <TableCell>{entry.paygPercent}%</TableCell>
-                        <TableCell>{entry.superPercent}%</TableCell>
+                        <TableCell className="font-medium">{entry.employee}</TableCell>
+                        <TableCell>${entry.normal_rate.toFixed(2)}</TableCell>
+                        <TableCell>${entry.ot_rate.toFixed(2)}</TableCell>
+                        <TableCell>{entry.payg}%</TableCell>
+                        <TableCell>{entry.super}%</TableCell>
                         <TableCell>
                           <Button onClick={() => deleteEntry(entry.id)} variant={"destructive"}>Delete</Button>
                         </TableCell>

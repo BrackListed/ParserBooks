@@ -34,11 +34,13 @@ func main() {
 	http.HandleFunc("/add/quotation", addQuotationsEntry)
 	http.HandleFunc("/add/accounts-payable", addBillEntry)
 	http.HandleFunc("/add/expenses", addExpensesEntry)
+	http.HandleFunc("/add/employees", addEmployees)
 	http.HandleFunc("/get/work-entry", getWorkEntry)
 	http.HandleFunc("/get/maintenance", getMaintenanceEntry)
 	http.HandleFunc("/get/quotations", getQuotationsEntry)
 	http.HandleFunc("/get/accounts-payable", getBills)
 	http.HandleFunc("/get/expenses", getExpenses)
+	http.HandleFunc("/get/employees", getEmployees)
 	http.HandleFunc("/delete/work-entry/{id}", deleteWorkEntry)
 	http.HandleFunc("/delete/maintenance-schedule/{id}", deleteMaintenanceEntry)
 	http.HandleFunc("/delete/quotations/{id}", deleteQuotationsEntry)
@@ -224,11 +226,11 @@ func addEmployees(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Employee   string `json:"employee"`
-		NormalRate string `json:"normalRate"`
-		OTRate     string `json:"otRate"`
-		Payg       int    `json:"payg"`
-		Super      int    `json:"super"`
+		Employee   string  `json:"employee"`
+		NormalRate float64 `json:"normalRate"`
+		OTRate     float64 `json:"otRate"`
+		Payg       int     `json:"payg"`
+		Super      int     `json:"super"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Println("Error decoding: ", err.Error())
@@ -512,5 +514,38 @@ func getExpenses(w http.ResponseWriter, r *http.Request) {
 		entries = append(entries, e)
 	}
 	defer rows.Close()
+	json.NewEncoder(w).Encode(entries)
+}
+
+func getEmployees(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	type employeeType struct {
+		ID         string  `json:"id"`
+		UserID     string  `json:"user_id"`
+		Employee   string  `json:"employee"`
+		NormalRate float64 `json:"normal_rate"`
+		OTRate     float64 `json:"ot_rate"`
+		Payg       int     `json:"payg"`
+		Super      int     `json:"super"`
+	}
+	rows, err := db.Query(r.Context(), "SELECT id, employee, normal_rate, ot_rate, payg, super FROM employees WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
+	if err != nil {
+		log.Println("Error retrieving data from the db: ", err.Error())
+		http.Error(w, err.Error(), 500)
+	}
+	var entries = []employeeType{}
+	for rows.Next() {
+		var e employeeType
+		if err := rows.Scan(&e.ID, &e.Employee, &e.NormalRate, &e.OTRate, &e.Payg, &e.Super); err != nil {
+			log.Println("Error scanning rows: ", err.Error())
+		}
+		entries = append(entries, e)
+	}
 	json.NewEncoder(w).Encode(entries)
 }
