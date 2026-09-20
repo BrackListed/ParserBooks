@@ -14,6 +14,7 @@ import {
   CreditCard,
   FileSpreadsheet,
   Banknote,
+  SquarePen,
 } from "lucide-react"
 
 import {
@@ -52,6 +53,7 @@ export function AppSidebar() {
   const isExpensesActive = typeof window !== "undefined" && window.location.pathname === "/expenses"
   const isPayrollActive = typeof window !== "undefined" && window.location.pathname === "/payroll"
   const isProjectSummaryActive = typeof window !== "undefined" && window.location.pathname === "/projectsummary"
+  const isProjectSummaryEntryActive = typeof window !== "undefined" && window.location.pathname === "/projectsummary/entry"
   return (
     <Sidebar>
       <SidebarHeader className="gap-3 p-3">
@@ -95,6 +97,12 @@ export function AppSidebar() {
               <SidebarMenuButton href = "/projectsummary" isActive={isProjectSummaryActive}>
                 <ClipboardList />
                 Project Summary
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href = "/projectsummary/entry" isActive={isProjectSummaryEntryActive}>
+                <SquarePen/>
+                Project Summary Entry
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

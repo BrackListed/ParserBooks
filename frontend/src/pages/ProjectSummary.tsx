@@ -1,10 +1,10 @@
-import { Sparkles, Search, Plus, Upload, Download, FolderOpen, Trash2, Pencil, ChevronDown } from "lucide-react"
+import { Sparkles, Search, Upload, Download, FolderOpen, Trash2, Pencil, ChevronDown } from "lucide-react"
 
 import DotGrid from "@/assets/DotGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { BentoGrid, BentoGridItem } from "@/ui/bento-grid"
-import { Button } from "@/components/ui/button"
+import { Button, LinkButton } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -57,10 +57,13 @@ export function ProjectSummary() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <Button className="rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20">
+                    <LinkButton
+                      href="/projectsummary/entry"
+                      className="rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                    >
                       <Sparkles className="size-4" />
                       Manual Entry
-                    </Button>
+                    </LinkButton>
                   </div>
                 </div>
                 <div className="h-px w-full bg-sidebar-border" />
@@ -128,10 +131,6 @@ export function ProjectSummary() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <Button className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
-                      <Plus className="size-4" />
-                      Add Project
-                    </Button>
                     <Button variant="outline">
                       <Upload className="size-4" />
                       Import Excel
