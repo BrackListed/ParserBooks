@@ -51,6 +51,7 @@ export function AppSidebar() {
   const isAccountsPayableActive = typeof window !== "undefined" && window.location.pathname === "/accounts-payable"
   const isExpensesActive = typeof window !== "undefined" && window.location.pathname === "/expenses"
   const isPayrollActive = typeof window !== "undefined" && window.location.pathname === "/payroll"
+  const isProjectSummaryActive = typeof window !== "undefined" && window.location.pathname === "/projectsummary"
   return (
     <Sidebar>
       <SidebarHeader className="gap-3 p-3">
@@ -91,7 +92,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarMenu className="gap-3">
             <SidebarMenuItem>
-              <SidebarMenuButton>
+              <SidebarMenuButton href = "/projectsummary" isActive={isProjectSummaryActive}>
                 <ClipboardList />
                 Project Summary
               </SidebarMenuButton>

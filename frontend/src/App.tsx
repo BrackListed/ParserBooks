@@ -6,6 +6,7 @@ import { Quotations } from "./pages/Quotations";
 import { AccountsPayable } from "./pages/AccountsPayable";
 import { Expenses } from "./pages/Expenses";
 import { Payroll } from "./pages/Payroll";
+import { ProjectSummary } from "./pages/ProjectSummary";
 
 export default function App(){
   return(
@@ -18,6 +19,7 @@ export default function App(){
         <Route path = "/accounts-payable" element={<AccountsPayable/>}/>
         <Route path = "/expenses" element={<Expenses/>}/>
         <Route path = "/payroll" element={<Payroll/>}/>
+        <Route path = "/projectsummary" element={<ProjectSummary/>}/>
       </Routes>
     </BrowserRouter>
   )
