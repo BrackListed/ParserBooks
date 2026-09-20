@@ -47,6 +47,7 @@ func main() {
 	http.HandleFunc("/delete/accounts-payable/{id}", deleteBillsEntry)
 	http.HandleFunc("/delete/expenses/{id}", deleteExpensesEntry)
 	http.HandleFunc("/delete/employees/{id}", deleteEmployeesEntry)
+	http.HandleFunc("/edit/employees/{id}", editEmployees)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -567,4 +568,28 @@ func getEmployees(w http.ResponseWriter, r *http.Request) {
 		entries = append(entries, e)
 	}
 	json.NewEncoder(w).Encode(entries)
+}
+
+func editEmployees(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "PATCH, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+	}
+	id := r.PathValue("id")
+	var body struct {
+		NormalRate float64 `json:"normalRate"`
+		OTRate     float64 `json:"otRate"`
+		Payg       int     `json:"payg"`
+		Super      int     `json:"super"`
+	}
+	json.NewDecoder(r.Body).Decode(&body)
+	_, err := db.Exec(r.Context(), "UPDATE employees SET normal_rate = $1 , ot_rate = $2, payg = $3, super = $4 WHERE id = $5", body.NormalRate, body.OTRate, body.Payg, body.Super, id)
+	if err != nil {
+		log.Println("Error updating table employees: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.WriteHeader(201)
 }

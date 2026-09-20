@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Save, Upload, Download, Plus } from "lucide-react"
+import { Save, Upload, Download, DollarSign } from "lucide-react"
 
 import DotGrid from "@/assets/DotGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -7,6 +7,14 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { BentoGrid, BentoGridItem } from "@/ui/bento-grid"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableHeader,
@@ -35,14 +43,28 @@ export function Payroll() {
   const [payg, setPayg] = useState(19)
   const [superPercent, setSuperPercent] = useState(11)
   const [employeeEntries, setEmployeeEntries] = useState<employeeEntryType[]>([])
-
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("")
+  const selectedEntry = employeeEntries.find((entry) => entry.id === selectedEmployeeId) ?? employeeEntries[0]
+  const selectedName = selectedEntry?.employee
   useEffect(() => {
     const fetchEmployeesData = async () => {
       const result = await axios.get("http://localhost:8080/get/employees")
       setEmployeeEntries(result.data)
+      if (result.data.length > 0) {
+        loadEmployee(result.data[0])
+      }
     }
     fetchEmployeesData()
   }, [])
+
+  function loadEmployee(entry: employeeEntryType) {
+    setSelectedEmployeeId(entry.id)
+    setName(entry.employee)
+    setNormalRate(entry.normal_rate)
+    setOtRate(entry.ot_rate)
+    setPayg(entry.payg)
+    setSuperPercent(entry.super)
+  }
 
   return (
     <div className="relative w-screen min-h-screen">
@@ -64,113 +86,85 @@ export function Payroll() {
         <SidebarInset className="bg-transparent">
           <div className="w-full h-full py-6 pr-6">
             <BentoGrid className="mx-0 max-w-none md:auto-rows-min">
-              <BentoGridItem colSpan={3} className="justify-start space-y-4 p-6">
-                <div>
-                  <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                    Payroll
-                  </p>
-                  <h2 className="text-2xl font-semibold text-neutral-100">
-                    Add Employee
-                  </h2>
+              <BentoGridItem className="justify-start space-y-4 p-6">
+                <div className="flex items-center gap-2">
+                  <div className="flex size-8 items-center justify-center rounded-full bg-sky-500/15">
+                    <DollarSign className="size-4 text-sky-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-neutral-100">
+                      Employee Settings
+                    </h2>
+                  </div>
                 </div>
                 <div className="h-px w-full bg-sidebar-border" />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">Name</label>
-                    <Input
-                      placeholder="Employee name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                  </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">Normal Rate $/hr</label>
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      value={normalRate}
-                      onChange={(e) => setNormalRate(Number(e.target.value))}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">OT Rate $/hr</label>
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      value={otRate}
-                      onChange={(e) => setOtRate(Number(e.target.value))}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">PAYG %</label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={payg}
-                      onChange={(e) => setPayg(Number(e.target.value))}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">Super %</label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={superPercent}
-                      onChange={(e) => setSuperPercent(Number(e.target.value))}
-                    />
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm text-neutral-300">Employee</label>
+                  <Select
+                    placeholder="Select employee"
+                    value={selectedEntry?.id}
+                    onChange={(value) => {
+                      const entry = employeeEntries.find((entry) => entry.id === value!.toString())
+                      if (entry) loadEmployee(entry)
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {employeeEntries.map((entry) => (
+                          <SelectItem key={entry.id} id={entry.id}>
+                            {entry.employee}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <Button
-                  onClick={() => addEmployee(name, normalRate, otRate, payg, superPercent)}
-                  className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500"
-                >
-                  <Plus className="size-4" />
-                  Add Employee
-                </Button>
-              </BentoGridItem>
-
-              <BentoGridItem colSpan={3} className="justify-start space-y-4 p-6">
-                <div>
-                  <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                    Register
-                  </p>
-                  <h2 className="text-2xl font-semibold text-neutral-100">
-                    Employees
-                  </h2>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm text-neutral-300">Name</label>
+                  <Input placeholder="Employee name" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
-                <div className="h-px w-full bg-sidebar-border" />
-                <Table>
-                  <TableHeader>
-                    <TableHead isRowHeader className="w-35">
-                      Name
-                    </TableHead>
-                    <TableHead>Normal Rate $/hr</TableHead>
-                    <TableHead>OT Rate $/hr</TableHead>
-                    <TableHead>PAYG %</TableHead>
-                    <TableHead>Super %</TableHead>
-                    <TableHead>Action</TableHead>
-                  </TableHeader>
-                  <TableBody>
-                    {employeeEntries.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="font-medium">{entry.employee}</TableCell>
-                        <TableCell>${entry.normal_rate.toFixed(2)}</TableCell>
-                        <TableCell>${entry.ot_rate.toFixed(2)}</TableCell>
-                        <TableCell>{entry.payg}%</TableCell>
-                        <TableCell>{entry.super}%</TableCell>
-                        <TableCell>
-                          <Button onClick={() => deleteEntry(entry.id)} variant={"destructive"}>Delete</Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                <TableCaption>A list of your employees.</TableCaption>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm text-neutral-300">Normal Rate $/hr</label>
+                  <Input type="number" value={normalRate} onChange={(e) => setNormalRate(Number(e.target.value))} />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm text-neutral-300">OT Rate $/hr</label>
+                  <Input type="number" value={otRate} onChange={(e) => setOtRate(Number(e.target.value))} />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm text-neutral-300">PAYG %</label>
+                  <Input type="number" value={payg} onChange={(e) => setPayg(Number(e.target.value))} />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm text-neutral-300">Super %</label>
+                  <Input type="number" value={superPercent} onChange={(e) => setSuperPercent(Number(e.target.value))} />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => {
+                      addEmployee(selectedEmployeeId, name, normalRate, otRate, payg, superPercent, selectedName)
+                    }}
+                    className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500"
+                  >
+                    <Save className="size-4" />
+                    Save
+                  </Button>
+                  {selectedEntry && (
+                    <Button onClick={() => deleteEntry(selectedEntry.id)} variant={"destructive"}>
+                      Delete
+                    </Button>
+                  )}
+                </div>
               </BentoGridItem>
 
               <BentoGridItem className="justify-start space-y-4 p-6">
@@ -396,17 +390,23 @@ export function Payroll() {
     </div>
   )
 
-  async function addEmployee(name: string, normalRate: number, otRate: number, paygPercent: number, superPercent: number) {
-    try {
+  async function addEmployee(id: string, name: string, normalRate: number, otRate: number, payg: number, superPercent: number, selectedName: string) {
+    if(selectedName != name){
       await axios.post("http://localhost:8080/add/employees", {
+        id: id,
         employee: name,
         normalRate: Number(normalRate),
         otRate: Number(otRate),
-        payg: Number(paygPercent),
+        payg: Number(payg),
         super: Number(superPercent),
       })
-    } catch (err) {
-      console.error(err)
+    } else{
+      await axios.patch(`http://localhost:8080/edit/employees/${id}`, {
+        normalRate: Number(normalRate),
+        otRate: Number(otRate),
+        payg: Number(payg),
+        super: Number(superPercent),
+      })
     }
   }
 
