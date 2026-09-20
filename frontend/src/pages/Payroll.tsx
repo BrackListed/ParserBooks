@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { Save, Upload, Download, DollarSign } from "lucide-react"
+import { CalendarDate, getLocalTimeZone, today } from "@internationalized/date"
+import { CalendarIcon, Save, Upload, Download, DollarSign } from "lucide-react"
 
 import DotGrid from "@/assets/DotGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -7,6 +8,8 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { BentoGrid, BentoGridItem } from "@/ui/bento-grid"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverTrigger } from "@/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -46,6 +49,17 @@ export function Payroll() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("")
   const selectedEntry = employeeEntries.find((entry) => entry.id === selectedEmployeeId) ?? employeeEntries[0]
   const selectedName = selectedEntry?.employee
+
+  const [weekStart, setWeekStart] = useState<CalendarDate>(today(getLocalTimeZone()))
+  const weekEnd = weekStart.add({ days: 6 })
+
+  function dayDate(offset: number) {
+    return weekStart.add({ days: offset }).toString()
+  }
+
+  function dayName(offset: number) {
+    return weekStart.add({ days: offset }).toDate(getLocalTimeZone()).toLocaleDateString(undefined, { weekday: "long" })
+  }
   useEffect(() => {
     const fetchEmployeesData = async () => {
       const result = await axios.get("http://localhost:8080/get/employees")
@@ -180,12 +194,23 @@ export function Payroll() {
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm text-neutral-300">Week Start</label>
-                  <Input disabled value="September 14, 2026" />
+                  <PopoverTrigger>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon />
+                      {weekStart.toDate(getLocalTimeZone()).toLocaleDateString(undefined, { dateStyle: "long" })}
+                    </Button>
+                    <Popover className="w-auto p-0">
+                      <Calendar value={weekStart} onChange={(value) => value && setWeekStart(value)} />
+                    </Popover>
+                  </PopoverTrigger>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm text-neutral-300">Week End</label>
-                  <Input disabled value="September 20, 2026" />
+                  <Input disabled value={weekEnd.toDate(getLocalTimeZone()).toLocaleDateString(undefined, { dateStyle: "long" })} />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -252,7 +277,7 @@ export function Payroll() {
                     Timesheet
                   </p>
                   <h2 className="text-2xl font-semibold text-neutral-100">
-                    Daily Timesheet (Monday–Sunday)
+                    Daily Timesheet
                   </h2>
                 </div>
                 <div className="h-px w-full bg-sidebar-border" />
@@ -271,8 +296,8 @@ export function Payroll() {
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell className="font-medium">2026-09-14</TableCell>
-                      <TableCell>Monday</TableCell>
+                      <TableCell className="font-medium">{dayDate(0)}</TableCell>
+                      <TableCell>{dayName(0)}</TableCell>
                       <TableCell><Input placeholder="Work" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
@@ -281,8 +306,8 @@ export function Payroll() {
                       <TableCell>0.00</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">2026-09-15</TableCell>
-                      <TableCell>Tuesday</TableCell>
+                      <TableCell className="font-medium">{dayDate(1)}</TableCell>
+                      <TableCell>{dayName(1)}</TableCell>
                       <TableCell><Input placeholder="Work" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
@@ -291,8 +316,8 @@ export function Payroll() {
                       <TableCell>0.00</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">2026-09-16</TableCell>
-                      <TableCell>Wednesday</TableCell>
+                      <TableCell className="font-medium">{dayDate(2)}</TableCell>
+                      <TableCell>{dayName(2)}</TableCell>
                       <TableCell><Input placeholder="Work" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
@@ -301,8 +326,8 @@ export function Payroll() {
                       <TableCell>0.00</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">2026-09-17</TableCell>
-                      <TableCell>Thursday</TableCell>
+                      <TableCell className="font-medium">{dayDate(3)}</TableCell>
+                      <TableCell>{dayName(3)}</TableCell>
                       <TableCell><Input placeholder="Work" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
@@ -311,8 +336,8 @@ export function Payroll() {
                       <TableCell>0.00</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">2026-09-18</TableCell>
-                      <TableCell>Friday</TableCell>
+                      <TableCell className="font-medium">{dayDate(4)}</TableCell>
+                      <TableCell>{dayName(4)}</TableCell>
                       <TableCell><Input placeholder="Work" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
@@ -321,8 +346,8 @@ export function Payroll() {
                       <TableCell>0.00</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">2026-09-19</TableCell>
-                      <TableCell>Saturday</TableCell>
+                      <TableCell className="font-medium">{dayDate(5)}</TableCell>
+                      <TableCell>{dayName(5)}</TableCell>
                       <TableCell><Input placeholder="Work" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
@@ -331,8 +356,8 @@ export function Payroll() {
                       <TableCell>0.00</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">2026-09-20</TableCell>
-                      <TableCell>Sunday</TableCell>
+                      <TableCell className="font-medium">{dayDate(6)}</TableCell>
+                      <TableCell>{dayName(6)}</TableCell>
                       <TableCell><Input placeholder="Work" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
                       <TableCell><Input type="time" /></TableCell>
