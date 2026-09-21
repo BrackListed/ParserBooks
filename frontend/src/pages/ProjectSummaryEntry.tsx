@@ -411,7 +411,7 @@ export function ProjectSummaryEntry() {
                 )}
 
                 <div className="flex flex-wrap gap-2">
-                  <Button className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
+                  <Button onClick={() => extractMaterials(file?.name)} className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
                     <Save className="size-4" />
                     Save Scanned rows to materials
                   </Button>
@@ -539,18 +539,18 @@ export function ProjectSummaryEntry() {
     </div>
   )
 
-  async function uploadFile(file: File) {
+  async function uploadFile(file: File, filename: string) {
     const formData = new FormData
-    formData.append("file", file)
+    formData.append("file", file, filename)
     try{
-      await axios.post("http://localhost:8080/add/file", formData)
+      await axios.post("http://localhost:8080/add/invoice", formData)
     } catch(err){
       console.log("Error uploading file: ", err)
     }
   }
   function loadFile(next: File | null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
-    if (next) uploadFile(next)
+    if (next) uploadFile(next, next.name)
     setFile(next)
     setPreviewUrl(next ? URL.createObjectURL(next) : null)
   }
@@ -558,5 +558,14 @@ export function ProjectSummaryEntry() {
   function clearScan() {
     loadFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  async function extractMaterials(name: string | undefined){
+    try{
+      console.log("Name: ", name)
+      await axios.post("http://localhost:8080/extract/materials/invoice", {name: name})
+    } catch(err){
+      console.log(err)
+    }
   }
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/ledongthuc/pdf"
 	storage_go "github.com/supabase-community/storage-go"
 )
 
@@ -38,7 +39,7 @@ func main() {
 	http.HandleFunc("/add/accounts-payable", addBillEntry)
 	http.HandleFunc("/add/expenses", addExpensesEntry)
 	http.HandleFunc("/add/employees", addEmployees)
-	http.HandleFunc("/add/file", uploadFile)
+	http.HandleFunc("/add/invoice", uploadFile)
 	http.HandleFunc("/get/work-entry", getWorkEntry)
 	http.HandleFunc("/get/maintenance", getMaintenanceEntry)
 	http.HandleFunc("/get/quotations", getQuotationsEntry)
@@ -52,6 +53,7 @@ func main() {
 	http.HandleFunc("/delete/expenses/{id}", deleteExpensesEntry)
 	http.HandleFunc("/delete/employees/{id}", deleteEmployeesEntry)
 	http.HandleFunc("/edit/employees/{id}", editEmployees)
+	http.HandleFunc("/extract/materials/invoice", extractMaterials)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -636,10 +638,44 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	if err := godotenv.Load(); err != nil {
 		log.Println("ENV failed to load in Extract Materials: ", err.Error())
 	}
-	// secretApiKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
-	// // storageClient := storage_go.NewClient("https://ybulxbjpaxnltzhhsukn.supabase.co/storage/v1", secretApiKey, nil)
-
+	var body struct {
+		Name string `json:"name"`
+	}
+	rawBody, _ := io.ReadAll(r.Body)
+	json.Unmarshal(rawBody, &body)
+	secretApiKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+	headers := map[string]string{
+		"apikey":        secretApiKey,
+		"Authorization": "Bearer " + secretApiKey,
+	}
+	storageClient := storage_go.NewClient("https://ybulxbjpaxnltzhhsukn.supabase.co/storage/v1", secretApiKey, headers)
+	result, err := storageClient.DownloadFile("Invoices", body.Name)
+	if err != nil {
+		log.Println("Cannot download invoice to extract it: ", err.Error())
+	}
+	readBody := bytes.NewReader(result)
+	res, err := pdf.NewReader(readBody, readBody.Size())
+	if err != nil {
+		log.Println("Error reading pdf in extraction: ", err.Error())
+		return
+	}
+	var textBuffer bytes.Buffer
+	for pageNum := 1; pageNum <= res.NumPage(); pageNum++ {
+		page := res.Page(pageNum)
+		text, err := page.GetPlainText(nil)
+		if err != nil {
+			log.Println("Cannot get plain text in pdf extraction: ", err.Error())
+		}
+		textBuffer.WriteString(text)
+	}
+	newText := textBuffer.String()
+	log.Println("New Text: ", newText)
+	// _, err = storageClient.RemoveFile("Invoices", []string{body.Name}) //at the end, remove the file once everything has been extracted
 }
