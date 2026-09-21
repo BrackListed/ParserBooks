@@ -620,7 +620,11 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	secretApiKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
-	storageClient := storage_go.NewClient("https://ybulxbjpaxnltzhhsukn.supabase.co/storage/v1", secretApiKey, nil)
+	headers := map[string]string{
+		"apikey":        secretApiKey,
+		"Authorization": "Bearer " + secretApiKey,
+	}
+	storageClient := storage_go.NewClient("https://ybulxbjpaxnltzhhsukn.supabase.co/storage/v1", secretApiKey, headers)
 	_, err = storageClient.UploadFile("Invoices", header.Filename, bytes.NewReader(fileBody))
 	if err != nil {
 		log.Println("Failed to upload file in supabase: ", err.Error())
