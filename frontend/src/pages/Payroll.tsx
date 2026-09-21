@@ -39,6 +39,7 @@ interface employeeEntryType {
   super: number
 }
 
+
 export function Payroll() {
   const [name, setName] = useState("")
   const [normalRate, setNormalRate] = useState(25.99)

@@ -25,31 +25,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import axios from "axios"
 
 export function ProjectSummaryEntry() {
   const [registerView, setRegisterView] = useState<"materials" | "labour">("materials")
-
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isDraggingOver, setIsDraggingOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
+  const [projectName, setProjectName] = useState("")
+  const [projectClient, setProjectClient] = useState("")
+  const [projectAddress, setProjectAddress] = useState("")
+  const [projectBillingType, setProjectBillingType] = useState<"Standard Charge" | "Contract" | "Cost Plus" | "Maintenance">("Standard Charge")
+  const [projectInitialVariation, setProjectInitialVariation] = useState(0)
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
     }
   }, [previewUrl])
-
-  function loadFile(next: File | null) {
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setFile(next)
-    setPreviewUrl(next ? URL.createObjectURL(next) : null)
-  }
-
-  function clearScan() {
-    loadFile(null)
-    if (fileInputRef.current) fileInputRef.current.value = ""
-  }
 
   return (
     <div className="relative w-screen min-h-screen">
@@ -91,30 +84,49 @@ export function ProjectSummaryEntry() {
                   <div className="space-y-4 lg:col-span-2">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm text-neutral-300">Project Name</label>
-                      <Input placeholder="Project Name" />
+                      <Input
+                        placeholder="Project Name"
+                        value={projectName}
+                        onChange={(e) => setProjectName(e.target.value)}
+                      />
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Client</label>
-                        <Input placeholder="Client" />
+                        <Input
+                          placeholder="Client"
+                          value={projectClient}
+                          onChange={(e) => setProjectClient(e.target.value)}
+                        />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Address</label>
-                        <Input placeholder="Address" />
+                        <Input
+                          placeholder="Address"
+                          value={projectAddress}
+                          onChange={(e) => setProjectAddress(e.target.value)}
+                        />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Billing Type</label>
-                        <Select placeholder="Standard charge">
+                        <Select
+                          placeholder="Standard charge"
+                          value={projectBillingType}
+                          onChange={(value) => setProjectBillingType(value!.toString() as typeof projectBillingType)}
+                        >
                           <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              <SelectItem id="standard-charge">Standard charge</SelectItem>
+                              <SelectItem id="Standard Charge">Standard charge</SelectItem>
+                              <SelectItem id="Contract">Contract</SelectItem>
+                              <SelectItem id="Cost Plus">Cost Plus</SelectItem>
+                              <SelectItem id="Maintenance">Contract</SelectItem>
                             </SelectGroup>
                           </SelectContent>
                         </Select>
@@ -128,12 +140,12 @@ export function ProjectSummaryEntry() {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Initial Variation ex GST</label>
-                        <Input type="number" placeholder="0" />
-                      </div>
-                      <div className="flex flex-col justify-end">
-                        <Button className="w-full rounded-lg bg-sky-500 text-white hover:bg-sky-400">
-                          Add project details
-                        </Button>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={projectInitialVariation}
+                          onChange={(e) => setProjectInitialVariation(Number(e.target.value))}
+                        />
                       </div>
                     </div>
                   </div>
@@ -472,7 +484,7 @@ export function ProjectSummaryEntry() {
                   </div>
                   <div className="flex flex-col gap-1 rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Markup</p>
-                    <Input placeholder="Input Markup here..." className="h-6 border-0 bg-transparent px-0 text-sm" />
+                    <Input placeholder="Input Markup here..." className="h-6 p-2 border-0 bg-transparent text-sm" />
                   </div>
                 </div>
 
@@ -526,4 +538,25 @@ export function ProjectSummaryEntry() {
       </SidebarProvider>
     </div>
   )
+
+  async function uploadFile(file: File) {
+    const formData = new FormData
+    formData.append("file", file)
+    try{
+      await axios.post("http://localhost:8080/add/file", formData)
+    } catch(err){
+      console.log("Error uploading file: ", err)
+    }
+  }
+  function loadFile(next: File | null) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    if (next) uploadFile(next)
+    setFile(next)
+    setPreviewUrl(next ? URL.createObjectURL(next) : null)
+  }
+
+  function clearScan() {
+    loadFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
 }

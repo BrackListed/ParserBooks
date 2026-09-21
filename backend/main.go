@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"net/http"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	storage_go "github.com/supabase-community/storage-go"
 )
 
 var db *pgxpool.Pool
@@ -35,6 +38,7 @@ func main() {
 	http.HandleFunc("/add/accounts-payable", addBillEntry)
 	http.HandleFunc("/add/expenses", addExpensesEntry)
 	http.HandleFunc("/add/employees", addEmployees)
+	http.HandleFunc("/add/file", uploadFile)
 	http.HandleFunc("/get/work-entry", getWorkEntry)
 	http.HandleFunc("/get/maintenance", getMaintenanceEntry)
 	http.HandleFunc("/get/quotations", getQuotationsEntry)
@@ -592,4 +596,46 @@ func editEmployees(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(201)
+}
+
+func uploadFile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if err := godotenv.Load(); err != nil {
+		log.Println("ENV failed to load in Extract Materials: ", err.Error())
+	}
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		log.Println("Error grabbing the invoice file: ", err.Error())
+		return
+	}
+	fileBody, err := io.ReadAll(file)
+	if err != nil {
+		log.Println("Error turning invoice file into bytes: ", err.Error())
+		return
+	}
+	secretApiKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+	storageClient := storage_go.NewClient("https://ybulxbjpaxnltzhhsukn.supabase.co/storage/v1", secretApiKey, nil)
+	_, err = storageClient.UploadFile("Invoices", header.Filename, bytes.NewReader(fileBody))
+	if err != nil {
+		log.Println("Failed to upload file in supabase: ", err.Error())
+	}
+	w.WriteHeader(201)
+}
+
+func extractMaterials(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if err := godotenv.Load(); err != nil {
+		log.Println("ENV failed to load in Extract Materials: ", err.Error())
+	}
+	// secretApiKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+	// // storageClient := storage_go.NewClient("https://ybulxbjpaxnltzhhsukn.supabase.co/storage/v1", secretApiKey, nil)
+
 }
