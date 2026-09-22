@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/ledongthuc/pdf"
+	openai "github.com/sashabaranov/go-openai"
 	storage_go "github.com/supabase-community/storage-go"
 )
 
@@ -676,6 +677,63 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 		textBuffer.WriteString(text)
 	}
 	newText := textBuffer.String()
-	log.Println("New Text: ", newText)
+	config := openai.DefaultConfig(os.Getenv("GROQ_API_KEY"))
+	config.BaseURL = "https://api.groq.com/openai/v1"
+	openaiClient := openai.NewClientWithConfig(config)
+	_ = openaiClient
+	resp, err := openaiClient.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model: "openai/gpt-oss-20b",
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role: openai.ChatMessageRoleSystem,
+					Content: `You are an expert data extraction AI. Extract the invoice details from the provided text/image and format them into the exact JSON schema specified below.
+			Do not create supplier-specific rules. Instead, semantically map the corresponding fields from the document into the target JSON keys.
+			Target JSON Schema:
+			{
+				"supplier": "string (The company issuing the invoice, e.g., 'Reece', 'Hobs Piping', 'ALC Plumbing')",
+              	"date": "string (The invoice issue date normalized to DD/MM/YYYY format)",
+              	"invoice": "string (The invoice number, ID, or reference number)",
+				"items": [
+                	{
+                  		"product_code": "string (Product code, item SKU, or 'N/A' if missing/not applicable)",
+                  		"description": "string (Line item description, labor details, service rendered, or item name)",
+                  		"quantity": "number (Quantity supplied or hours worked)",
+                  		"ex_gst": "number (Unit price BEFORE GST or hourly rate before GST)",
+                  		"gst": "number (Total GST amount for this line item. If not specified per item, calculate it as 10 percent of the item's total ex-GST value if taxable)",
+                  		"total": "number (Total price for this line item including GST)"
+                	}
+				],
+				"subtotal": "number (Sum of all items ex-GST)",
+              	"gst_total": "number (Total GST for the document)",
+              	"total": "number (Grand total including GST)"
+			}
+			Field Extraction Guidelines:
+              - Supplier: Identify the main billing entity/header. (e.g., If 'Reece Australia Pty Ltd' or 'Samios Plumbing Supplies' is at the top, capture the first word, like 'Bayon', 'Samios, 'Reece', 'ALC').
+              - Subcontractor Labor: If the invoice tracks labor hours (e.g., 'Internals 6 hours' or 'rough in at pagewood'), map 'hours' to 'quantity' and 'hourly rate' to 'ex_gst'.
+              - Non-Taxable/Reimbursements: If an item explicitly indicates it is non-taxable (e.g., parking fees, specific bills), set its 'gst' to 0.
+
+            Fallback Rules:
+              - Never use null or leave keys out. 
+              - For any missing text fields, use "To be determined".
+              - For any missing or unresolvable number fields, use 0.
+              - Output ONLY the raw JSON object. Do not include markdown formatting code blocks, intro text, or explanations
+			`,
+				},
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: newText,
+				},
+			},
+		},
+	)
+	if err != nil {
+		log.Println("Error calling groq chat completion: ", err.Error())
+		return
+	}
+	for _, c := range resp.Choices {
+		fmt.Println(c.Message.Content)
+	}
 	// _, err = storageClient.RemoveFile("Invoices", []string{body.Name}) //at the end, remove the file once everything has been extracted
 }
