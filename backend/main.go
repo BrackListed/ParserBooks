@@ -728,13 +728,35 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	)
+	type materialList struct {
+		ProductCode string  `json:"product_code"`
+		Description string  `json:"description"`
+		Quantity    int     `json:"quantity"`
+		ExGST       float64 `json:"ex_gst"`
+		GST         float64 `json:"gst"`
+		Total       float64 `json:"total"`
+	}
+	type response struct {
+		Supplier string         `json:"supplier"`
+		Date     string         `json:"date"`
+		Invoice  string         `json:"invoice"`
+		Items    []materialList `json:"items"`
+		Subtotal float64        `json:"subtotal"`
+		GstTotal float64        `json:"gst_total"`
+		Total    float64        `json:"total"`
+	}
+	var message response
 	if err != nil {
 		log.Println("Error calling groq chat completion: ", err.Error())
 		return
 	}
-	for _, c := range resp.Choices {
-		json.NewEncoder(w).Encode(c.Message.Content)
-	}
-	_, err = storageClient.RemoveFile("Invoices", []string{body.Name}) //at the end, remove the file once everything has been extracted
 	w.WriteHeader(201)
+	for _, c := range resp.Choices {
+		err := json.Unmarshal([]byte(c.Message.Content), &message)
+		if err != nil {
+			log.Println("Error unmarshalling message in extraction: ", err.Error())
+		}
+	}
+	json.NewEncoder(w).Encode(message)
+	_, err = storageClient.RemoveFile("Invoices", []string{body.Name}) //at the end, remove the file once everything has been extracted
 }

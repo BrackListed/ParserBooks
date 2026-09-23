@@ -27,6 +27,15 @@ import {
 } from "@/components/ui/select"
 import axios from "axios"
 
+
+interface materialListType{
+  product_code: string
+  description: string
+  quantity: number
+  ex_gst: number
+  gst: number
+  total: number
+}
 export function ProjectSummaryEntry() {
   const [registerView, setRegisterView] = useState<"materials" | "labour">("materials")
   const [file, setFile] = useState<File | null>(null)
@@ -38,6 +47,10 @@ export function ProjectSummaryEntry() {
   const [projectAddress, setProjectAddress] = useState("")
   const [projectBillingType, setProjectBillingType] = useState<"Standard Charge" | "Contract" | "Cost Plus" | "Maintenance">("Standard Charge")
   const [projectInitialVariation, setProjectInitialVariation] = useState(0)
+  const materialSupplier = useState("")
+  const materialDate = useState("")
+  const materialInvoice = useState("")
+  const materialList = useState<materialListType[]>([])
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -564,7 +577,7 @@ export function ProjectSummaryEntry() {
     try{
       console.log("Name: ", name)
       const result = await axios.post("http://localhost:8080/extract/materials/invoice", {name: name})
-      console.log(result)
+      console.log(result.data)
     } catch(err){
       console.log(err)
     }
