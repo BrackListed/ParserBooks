@@ -733,7 +733,8 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, c := range resp.Choices {
-		fmt.Println(c.Message.Content)
+		json.NewEncoder(w).Encode(c.Message.Content)
 	}
-	// _, err = storageClient.RemoveFile("Invoices", []string{body.Name}) //at the end, remove the file once everything has been extracted
+	_, err = storageClient.RemoveFile("Invoices", []string{body.Name}) //at the end, remove the file once everything has been extracted
+	w.WriteHeader(201)
 }

@@ -563,7 +563,8 @@ export function ProjectSummaryEntry() {
   async function extractMaterials(name: string | undefined){
     try{
       console.log("Name: ", name)
-      await axios.post("http://localhost:8080/extract/materials/invoice", {name: name})
+      const result = await axios.post("http://localhost:8080/extract/materials/invoice", {name: name})
+      console.log(result)
     } catch(err){
       console.log(err)
     }
