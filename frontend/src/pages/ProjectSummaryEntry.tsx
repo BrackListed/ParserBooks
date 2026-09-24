@@ -47,10 +47,13 @@ export function ProjectSummaryEntry() {
   const [projectAddress, setProjectAddress] = useState("")
   const [projectBillingType, setProjectBillingType] = useState<"Standard Charge" | "Contract" | "Cost Plus" | "Maintenance">("Standard Charge")
   const [projectInitialVariation, setProjectInitialVariation] = useState(0)
-  const materialSupplier = useState("")
-  const materialDate = useState("")
-  const materialInvoice = useState("")
-  const materialList = useState<materialListType[]>([])
+  const [materialDate, setMaterialDate] = useState("")
+  const [materialGstTotal, setMaterialGstTotal] = useState(0)
+  const [materialInvoice, setMaterialInvoice] = useState("")
+  const [materialItems, setMaterialItems] = useState<materialListType[]>([])
+  const [materialSubtotal, setMaterialSubtotal] = useState(0)
+  const [materialSupplier, setMaterialSupplier] = useState(0)
+  const [materialTotal, setMaterialTotal] = useState(0)
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -481,23 +484,31 @@ export function ProjectSummaryEntry() {
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
                   <div className="rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Supplier</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-100">FERGUSON</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-100">{materialSupplier}</p>
                   </div>
                   <div className="rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-100">0</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-100">{materialTotal}</p>
                   </div>
                   <div className="rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Invoice</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-500">—</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-500">{materialInvoice}</p>
                   </div>
                   <div className="rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Date</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-500">—</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-500">{materialDate}</p>
                   </div>
                   <div className="flex flex-col gap-1 rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Markup</p>
                     <Input placeholder="Input Markup here..." className="h-6 p-2 border-0 bg-transparent text-sm" />
+                  </div>
+                  <div className="rounded-lg border border-sidebar-border px-3 py-2">
+                    <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Subtotal</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-500">{materialSubtotal}</p>
+                  </div>
+                  <div className="rounded-lg border border-sidebar-border px-3 py-2">
+                    <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">GST Total</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-500">{materialGstTotal}</p>
                   </div>
                 </div>
 
@@ -512,31 +523,38 @@ export function ProjectSummaryEntry() {
                           Description
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Qty Supplied
+                          Quantity
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Unit Price ex GST
+                          Ex GST
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Unit
+                          GST
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Net Price ex GST
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          GST Amount
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Total Price Inc GST
+                          Total
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td colSpan={8} className="px-3 py-6 text-center text-sm text-neutral-500">
-                          No {registerView} added to this project yet.
-                        </td>
-                      </tr>
+                      {materialItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-3 py-6 text-center text-sm text-neutral-500">
+                            No {registerView} added to this project yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        materialItems.map((material, index) => (
+                          <tr key={index} className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
+                            <td className="px-3 py-3 font-medium text-neutral-100 whitespace-nowrap">{material.product_code}</td>
+                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.description}</td>
+                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.quantity}</td>
+                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.ex_gst.toFixed(2)}</td>
+                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.gst.toFixed(2)}</td>
+                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.total.toFixed(2)}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -575,9 +593,15 @@ export function ProjectSummaryEntry() {
 
   async function extractMaterials(name: string | undefined){
     try{
-      console.log("Name: ", name)
       const result = await axios.post("http://localhost:8080/extract/materials/invoice", {name: name})
-      console.log(result.data)
+      setMaterialDate(result.data.date)
+      setMaterialGstTotal(result.data.gst_total)
+      setMaterialInvoice(result.data.invoice)
+      setMaterialItems(result.data.items)
+      setMaterialSubtotal(result.data.subtotal)
+      setMaterialSupplier(result.data.supplier)
+      setMaterialTotal(result.data.total)
+      clearScan()
     } catch(err){
       console.log(err)
     }
