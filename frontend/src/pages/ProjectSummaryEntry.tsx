@@ -36,6 +36,17 @@ interface materialListType{
   gst: number
   total: number
 }
+
+interface labourListType{
+  date: string
+  person: string
+  type: string
+  from: string
+  to: string
+  hours: number
+  total: number
+  notes: string
+}
 export function ProjectSummaryEntry() {
   const [registerView, setRegisterView] = useState<"materials" | "labour">("materials")
   const [file, setFile] = useState<File | null>(null)
@@ -54,6 +65,7 @@ export function ProjectSummaryEntry() {
   const [materialSubtotal, setMaterialSubtotal] = useState(0)
   const [materialSupplier, setMaterialSupplier] = useState(0)
   const [materialTotal, setMaterialTotal] = useState(0)
+  const [labourItems] = useState<labourListType[]>([])
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -323,11 +335,11 @@ export function ProjectSummaryEntry() {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">From:</label>
+                    <label className="text-sm text-neutral-300">From</label>
                     <Input type="time" defaultValue="08:00" />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">To:</label>
+                    <label className="text-sm text-neutral-300">To</label>
                     <Input type="time" defaultValue="17:00" />
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -337,8 +349,8 @@ export function ProjectSummaryEntry() {
                 </div>
 
                 <div className="flex flex-col gap-1.5 sm:w-64">
-                  <label className="text-sm text-neutral-300">Rate</label>
-                  <Input type="number" placeholder="default: 25.99" />
+                  <label className="text-sm text-neutral-300">Total</label>
+                  <Input type="number" placeholder="0.00" />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
@@ -513,50 +525,105 @@ export function ProjectSummaryEntry() {
                 </div>
 
                 <div className="overflow-x-auto rounded-lg border border-sidebar-border">
-                  <table className="w-full min-w-max border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-sidebar-border bg-sidebar-accent/40">
-                        <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Product Code
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Description
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Quantity
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Ex GST
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          GST
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                          Total
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {materialItems.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="px-3 py-6 text-center text-sm text-neutral-500">
-                            No {registerView} added to this project yet.
-                          </td>
+                  {registerView === "materials" ? (
+                    <table className="w-full min-w-max border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-sidebar-border bg-sidebar-accent/40">
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Product Code
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Description
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Quantity
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Ex GST
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            GST
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Total
+                          </th>
                         </tr>
-                      ) : (
-                        materialItems.map((material, index) => (
-                          <tr key={index} className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
-                            <td className="px-3 py-3 font-medium text-neutral-100 whitespace-nowrap">{material.product_code}</td>
-                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.description}</td>
-                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.quantity}</td>
-                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.ex_gst.toFixed(2)}</td>
-                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.gst.toFixed(2)}</td>
-                            <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.total.toFixed(2)}</td>
+                      </thead>
+                      <tbody>
+                        {materialItems.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-3 py-6 text-center text-sm text-neutral-500">
+                              No materials added to this project yet.
+                            </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ) : (
+                          materialItems.map((material, index) => (
+                            <tr key={index} className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
+                              <td className="px-3 py-3 font-medium text-neutral-100 whitespace-nowrap">{material.product_code}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.description}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.quantity}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.ex_gst.toFixed(2)}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.gst.toFixed(2)}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.total.toFixed(2)}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <table className="w-full min-w-max border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-sidebar-border bg-sidebar-accent/40">
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Date
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Person
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Type
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            From
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            To
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Hours
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Total
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Notes
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {labourItems.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="px-3 py-6 text-center text-sm text-neutral-500">
+                              No labour added to this project yet.
+                            </td>
+                          </tr>
+                        ) : (
+                          labourItems.map((labour, index) => (
+                            <tr key={index} className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
+                              <td className="px-3 py-3 font-medium text-neutral-100 whitespace-nowrap">{labour.date}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.person}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.type}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.from}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.to}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.hours}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${labour.total.toFixed(2)}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.notes}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
 
                 <Button className="w-full rounded-lg bg-sky-500 text-white hover:bg-sky-400">
