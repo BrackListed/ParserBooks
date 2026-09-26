@@ -47,6 +47,17 @@ interface labourListType{
   total: number
   notes: string
 }
+
+interface employeeEntryType {
+  id: string
+  user_id: string
+  employee: string
+  normal_rate: number
+  ot_rate: number
+  payg: number
+  super: number
+}
+
 export function ProjectSummaryEntry() {
   const [registerView, setRegisterView] = useState<"materials" | "labour">("materials")
   const [file, setFile] = useState<File | null>(null)
@@ -72,13 +83,29 @@ export function ProjectSummaryEntry() {
   const [materialEntryGST, setMaterialEntryGST] = useState(0.0)
   const [materialEntryExGSTTotal, setMaterialEntryExGSTTotal] = useState(0.0)
   const [materialEntryTotal, setMaterialEntryTotal] = useState(0.0)
+  const [labourDate, setLabourDate] = useState("")
+  const [labourEmployee, setLabourEmployee] = useState<employeeEntryType | undefined>(undefined)
+  const [labourType, setLabourType] = useState<"Normal" | "Overtime" | string>("Normal")
+  const [labourFrom, setLabourFrom] = useState("")
+  const [labourTo, setLabourTo] = useState("")
+  const [labourHours, setLabourHours] = useState(0)
+  const [labourTotal, setLabourTotal] = useState(0.0)
+  const [labourNotes, setLabourNotes] = useState("")
   const [labourItems] = useState<labourListType[]>([])
-
+  const [employeeEntries, setEmployeeEntries] = useState<employeeEntryType[]>([])
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
     }
   }, [previewUrl])
+
+  useEffect(() => {
+    const fetchEmployeesData = async () => {
+      const result = await axios.get("http://localhost:8080/get/employees")
+      setEmployeeEntries(result.data)
+    }
+    fetchEmployeesData()
+  }, [])
 
   return (
     <div className="relative w-screen min-h-screen">
@@ -318,24 +345,36 @@ export function ProjectSummaryEntry() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Date</label>
-                    <Input type="date" defaultValue="2026-09-20" />
+                    <Input onChange={(e) => setLabourDate(e.target.value)} type="date" defaultValue="2026-09-20" />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-neutral-300">Person</label>
-                    <Select placeholder="Employees...">
+                    <label className="text-sm text-neutral-300">Employee</label>
+                    <Select 
+                      placeholder="Employees..."
+                      value={labourEmployee?.id ?? ""}
+                      onChange={(value) =>
+                        {
+                          setLabourEmployee(employeeEntries.find((e) => e.id === value))
+                        }
+                      }
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectGroup>
-                          <SelectItem>Steven</SelectItem>
-                        </SelectGroup>
+                        {employeeEntries.map((e) => (<SelectGroup key={e.id}>
+                          <SelectItem id={e.id} key={e.id}>{e.employee}</SelectItem>
+                        </SelectGroup>))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Type</label>
-                    <Select placeholder="Normal">
+                    <Select 
+                      placeholder="Normal"
+                      value={labourType}
+                      onChange={(value) => setLabourType(value?.toString() ?? "")}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
@@ -350,26 +389,34 @@ export function ProjectSummaryEntry() {
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">From</label>
-                    <Input type="time" defaultValue="08:00" />
+                    <Input onChange={(e) => setLabourFrom(e.target.value)} type="time" defaultValue="08:00" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">To</label>
-                    <Input type="time" defaultValue="17:00" />
+                    <Input
+                      type="time" defaultValue={"17:00"}
+                      onChange={(e) => setLabourTo(e.target.value)}
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Hours</label>
-                    <Input type="number" placeholder="Hours" />
+                    <Input onChange={(e) => setLabourHours(Number(e.target.value))} type="number" placeholder="Hours" />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5 sm:w-64">
                   <label className="text-sm text-neutral-300">Total</label>
-                  <Input type="number" placeholder="0.00" />
+                    <Input
+                      value={labourHours * (labourType === "Normal" ? (labourEmployee?.normal_rate ?? 0) : (labourEmployee?.ot_rate ?? 0))}
+                      disabled
+                      type="number"
+                      placeholder="0.00"
+                    />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm text-neutral-300">Notes</label>
-                  <Input placeholder="Notes" />
+                  <Input onChange={(e) => setLabourNotes(e.target.value)} placeholder="Notes" />
                 </div>
 
                 <Button className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
