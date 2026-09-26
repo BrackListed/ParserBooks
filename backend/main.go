@@ -752,6 +752,7 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(201)
 	for _, c := range resp.Choices {
+		log.Println(c.Message.Content)
 		err := json.Unmarshal([]byte(c.Message.Content), &message)
 		if err != nil {
 			log.Println("Error unmarshalling message in extraction: ", err.Error())

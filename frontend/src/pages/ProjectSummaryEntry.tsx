@@ -63,9 +63,15 @@ export function ProjectSummaryEntry() {
   const [materialInvoice, setMaterialInvoice] = useState("")
   const [materialItems, setMaterialItems] = useState<materialListType[]>([])
   const [materialSubtotal, setMaterialSubtotal] = useState(0)
-  const [materialSupplier, setMaterialSupplier] = useState(0)
+  const [materialSupplier, setMaterialSupplier] = useState("")
   const [materialTotal, setMaterialTotal] = useState(0)
+  const [materialEntryProductCode, setMaterialEntryProductCode] = useState("")
+  const [materialEntryQty, setMaterialEntryQty] = useState(0)
+  const [materialEntryDescription, setMaterialEntryDescription] = useState("")
+  const [materialEntryExGST, setMaterialEntryExGST] = useState(0.0)
+  const [materialEntryNetprice, setMaterialEntryNetprice] = useState(0.0)
   const [labourItems] = useState<labourListType[]>([])
+
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -230,13 +236,17 @@ export function ProjectSummaryEntry() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Supplier</label>
-                    <Select placeholder="Suppliers...">
+                    <Select
+                      placeholder="Suppliers..."
+                      value={materialSupplier}
+                      onChange={(value) => setMaterialSupplier(value?.toString() ?? "")}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem>Ferguson</SelectItem>
+                          <SelectItem id="Ferguson">Ferguson</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -539,13 +549,16 @@ export function ProjectSummaryEntry() {
                             Quantity
                           </th>
                           <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                            Ex GST
+                            Ex GST(Unit Price)
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Ex GST(Total)
                           </th>
                           <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
                             GST
                           </th>
                           <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
-                            Total
+                            Total inc GST
                           </th>
                         </tr>
                       </thead>
@@ -563,6 +576,7 @@ export function ProjectSummaryEntry() {
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.description}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.quantity}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.ex_gst.toFixed(2)}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${(material.ex_gst * material.quantity)}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.gst.toFixed(2)}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.total.toFixed(2)}</td>
                             </tr>
@@ -668,6 +682,7 @@ export function ProjectSummaryEntry() {
       setMaterialSubtotal(result.data.subtotal)
       setMaterialSupplier(result.data.supplier)
       setMaterialTotal(result.data.total)
+      console.log(result.data)
       clearScan()
     } catch(err){
       console.log(err)
