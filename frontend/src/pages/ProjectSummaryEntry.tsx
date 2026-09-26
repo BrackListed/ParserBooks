@@ -69,7 +69,9 @@ export function ProjectSummaryEntry() {
   const [materialEntryQty, setMaterialEntryQty] = useState(0)
   const [materialEntryDescription, setMaterialEntryDescription] = useState("")
   const [materialEntryExGST, setMaterialEntryExGST] = useState(0.0)
-  const [materialEntryNetprice, setMaterialEntryNetprice] = useState(0.0)
+  const [materialEntryGST, setMaterialEntryGST] = useState(0.0)
+  const [materialEntryExGSTTotal, setMaterialEntryExGSTTotal] = useState(0.0)
+  const [materialEntryTotal, setMaterialEntryTotal] = useState(0.0)
   const [labourItems] = useState<labourListType[]>([])
 
   useEffect(() => {
@@ -258,36 +260,36 @@ export function ProjectSummaryEntry() {
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Product Code</label>
-                    <Input placeholder="Product Code" />
+                    <Input onChange={(e) => setMaterialEntryProductCode(e.target.value)} placeholder="Product Code" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Qty</label>
-                    <Input type="number" placeholder="0" />
+                    <Input onChange={(e) => setMaterialEntryQty(Number(e.target.value))} type="number" placeholder="0" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Description/notes</label>
-                    <Input placeholder="Description/notes" />
+                    <Input onChange={(e) => setMaterialEntryDescription(e.target.value)} placeholder="Description/notes" />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Unit Price ex GST</label>
-                    <Input type="number" placeholder="0.00" />
+                    <Input onChange={(e) => { const unitPrice = Number(e.target.value); setMaterialEntryExGST(unitPrice); setMaterialEntryGST((unitPrice * Number(materialEntryQty)) * 0.10); setMaterialEntryExGSTTotal(unitPrice * materialEntryQty); setMaterialEntryTotal((unitPrice * materialEntryQty) + ((unitPrice * Number(materialEntryQty)) * 0.10))}} type="number" placeholder="0.00"/>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Net Price ex GST</label>
-                    <Input type="number" placeholder="0" />
+                    <Input value={materialEntryExGSTTotal.toFixed(2)} type="number" placeholder="0.00" disabled/>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">
                       GST Amount <span className="text-neutral-500">(10% of net)</span>
                     </label>
-                    <Input type="number" placeholder="0.00" />
+                    <Input value = {materialEntryGST.toFixed(2)} type="number" placeholder="0.00" disabled />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5 sm:w-64">
                   <label className="text-sm text-neutral-300">Total Inc GST</label>
-                  <Input type="number" placeholder="0" />
+                  <Input value={materialEntryTotal} type="number" placeholder="0" disabled />
                 </div>
 
                 <Button className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
@@ -576,7 +578,7 @@ export function ProjectSummaryEntry() {
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.description}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.quantity}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.ex_gst.toFixed(2)}</td>
-                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${(material.ex_gst * material.quantity)}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${(material.ex_gst * material.quantity).toFixed(2)}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.gst.toFixed(2)}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.total.toFixed(2)}</td>
                             </tr>
