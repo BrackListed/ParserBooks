@@ -684,7 +684,8 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 	resp, err := openaiClient.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: "openai/gpt-oss-20b",
+			Model:     "openai/gpt-oss-20b",
+			MaxTokens: 8192,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role: openai.ChatMessageRoleSystem,

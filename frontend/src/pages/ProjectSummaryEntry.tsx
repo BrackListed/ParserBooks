@@ -236,7 +236,7 @@ export function ProjectSummaryEntry() {
                     <label className="text-sm text-neutral-300">Date</label>
                     <Input type="date" defaultValue="2026-09-20" />
                   </div>
-                  <div className="flex flex-col gap-1.5">
+                  {!materialSupplier && <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Supplier</label>
                     <Select
                       placeholder="Suppliers..."
@@ -252,11 +252,11 @@ export function ProjectSummaryEntry() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
+                  </div>}
+                  {!materialInvoice && <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Invoice No.</label>
-                    <Input placeholder="Invoice No." />
-                  </div>
+                    <Input onChange={(e) => setMaterialInvoice(e.target.value)} placeholder="Invoice No." />
+                  </div>}
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Product Code</label>
@@ -292,7 +292,9 @@ export function ProjectSummaryEntry() {
                   <Input value={materialEntryTotal} type="number" placeholder="0" disabled />
                 </div>
 
-                <Button className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
+                <Button onClick={() => {
+                  setMaterialItems(materialItems => [...materialItems, {product_code: materialEntryProductCode, description: materialEntryDescription, quantity: materialEntryQty, ex_gst: materialEntryExGST, gst: materialEntryGST, total: materialEntryTotal}])
+                }} className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
                   Add Material
                 </Button>
               </BentoGridItem>
