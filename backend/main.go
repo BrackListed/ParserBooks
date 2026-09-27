@@ -17,8 +17,6 @@ import (
 	"github.com/ledongthuc/pdf"
 	storage_go "github.com/supabase-community/storage-go"
 	"google.golang.org/genai"
-	"google.golang.org/genai/interactions/models/interactions"
-	"google.golang.org/genai/interactions/models/operations"
 )
 
 var db *pgxpool.Pool
@@ -702,20 +700,23 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 	}
 	newText := textBuffer.String()
 	ctx := context.Background()
-	client, err := genai.NewClient(ctx, nil)
+	var apiKey = os.Getenv("GEMINI_API_KEY")
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	interactionResponse, err := client.Interactions.Create(ctx, operations.CreateInteractionRequest{
-		Body: operations.NewCreateInteractionRequestBody(interactions.CreateModelInteraction{
-			Model: interactions.Model("gemini-3.8-flash"),
-			Input: func() *interactions.InteractionsInput {
-				input := interactions.NewInteractionsInput([]interactions.Content{
-					interactions.NewContent(interactions.TextContent{
-						Text: newText,
-					}),
-					interactions.NewContent(interactions.TextContent{
-						Text: `You are an expert data extraction AI. Extract the invoice details from the provided text/image and format them into the exact JSON schema specified below.
+	chat, err := client.Chats.Create(ctx, "gemini-3.5-flash-lite", nil, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var ai_response *genai.GenerateContentResponse
+	if ai_response, err = chat.SendMessage(
+		ctx,
+		genai.Part{
+			Text: `You are an expert data extraction AI. Extract the invoice details from the provided text/image and format them into the exact JSON schema specified below.
 					Do not create supplier-specific rules. Instead, semantically map the corresponding fields from the document into the target JSON keys.
 					Target JSON Schema:
 					{
@@ -745,13 +746,14 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
              		- Never use null or leave keys out. 
               		- For any missing text fields, use "To be determined".
               		- For any missing or unresolvable number fields, use 0.
-              		- Output ONLY the raw JSON object. Do not include markdown formatting code blocks, intro text, or explanations`,
-					}),
-				})
-				return &input
-			}(),
-		}),
-	})
+              		- Output ONLY the raw JSON object. Do not include markdown formatting code blocks, intro text, or explanations
+					---INVOICE---
+					` + newText,
+		},
+	); err != nil {
+		log.Println("Error soliciting response from Gemini in Extract Materials: ", err.Error())
+		return
+	}
 	type materialList struct {
 		ProductCode string  `json:"product_code"`
 		Description string  `json:"description"`
@@ -770,12 +772,8 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 		Total    float64        `json:"total"`
 	}
 	var message response
-	if err != nil {
-		log.Println("Error calling gemini chat completion: ", err.Error())
-		return
-	}
-	err = json.Unmarshal([]byte(*interactionResponse.Interaction.OutputText), &message)
-	log.Println("Message: ", message)
+	stringMessage := ai_response.Text()
+	err = json.Unmarshal([]byte(stringMessage), &message)
 	if err != nil {
 		log.Fatal("Error unmarshalling AI text in invoice extraction: ", err.Error())
 	}
