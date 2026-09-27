@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import axios from "axios"
+import { v4 as uuidv4 } from 'uuid';
 
 
 interface materialListType{
@@ -38,6 +39,7 @@ interface materialListType{
 }
 
 interface labourListType{
+  id: string
   date: string
   person: string
   type: string
@@ -86,12 +88,11 @@ export function ProjectSummaryEntry() {
   const [labourDate, setLabourDate] = useState("")
   const [labourEmployee, setLabourEmployee] = useState<employeeEntryType | undefined>(undefined)
   const [labourType, setLabourType] = useState<"Normal" | "Overtime" | string>("Normal")
-  const [labourFrom, setLabourFrom] = useState("")
-  const [labourTo, setLabourTo] = useState("")
+  const [labourFrom, setLabourFrom] = useState("09:00")
+  const [labourTo, setLabourTo] = useState("17:00")
   const [labourHours, setLabourHours] = useState(0)
-  const [labourTotal, setLabourTotal] = useState(0.0)
   const [labourNotes, setLabourNotes] = useState("")
-  const [labourItems] = useState<labourListType[]>([])
+  const [labourItems, setLabourItems] = useState<labourListType[]>([])
   const [employeeEntries, setEmployeeEntries] = useState<employeeEntryType[]>([])
   useEffect(() => {
     return () => {
@@ -106,6 +107,7 @@ export function ProjectSummaryEntry() {
     }
     fetchEmployeesData()
   }, [])
+
 
   return (
     <div className="relative w-screen min-h-screen">
@@ -338,6 +340,9 @@ export function ProjectSummaryEntry() {
                     <h2 className="text-2xl font-semibold text-neutral-100">
                       Labour/Subcon Entry
                     </h2>
+                    <p className="text-sm italic text-neutral-400">
+                      Employees are added in Payroll Section
+                    </p>
                   </div>
                 </div>
                 <div className="h-px w-full bg-sidebar-border" />
@@ -389,7 +394,7 @@ export function ProjectSummaryEntry() {
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">From</label>
-                    <Input onChange={(e) => setLabourFrom(e.target.value)} type="time" defaultValue="08:00" />
+                    <Input onChange={(e) => setLabourFrom(e.target.value)} type="time" defaultValue="09:00" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">To</label>
@@ -419,7 +424,29 @@ export function ProjectSummaryEntry() {
                   <Input onChange={(e) => setLabourNotes(e.target.value)} placeholder="Notes" />
                 </div>
 
-                <Button className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500">
+                <Button
+                  onClick={() =>
+                    {
+                      const id = uuidv4()
+                      const total = labourHours * (labourType === "Normal" ? (labourEmployee?.normal_rate ?? 0) : (labourEmployee?.ot_rate ?? 0))
+                      setLabourItems((items) => [
+                        ...items,
+                        {
+                          id: id,
+                          date: labourDate,
+                          person: labourEmployee?.employee ?? "",
+                          type: labourType,
+                          from: labourFrom,
+                          to: labourTo,
+                          hours: labourHours,
+                          total: total,
+                          notes: labourNotes,
+                        },
+                      ])
+                    }
+                  }
+                  className="w-fit rounded-full bg-emerald-600 text-white hover:bg-emerald-500"
+                >
                   Add Labour
                 </Button>
               </BentoGridItem>
@@ -663,26 +690,36 @@ export function ProjectSummaryEntry() {
                           <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
                             Notes
                           </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Action
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {labourItems.length === 0 ? (
                           <tr>
-                            <td colSpan={8} className="px-3 py-6 text-center text-sm text-neutral-500">
+                            <td colSpan={9} className="px-3 py-6 text-center text-sm text-neutral-500">
                               No labour added to this project yet.
                             </td>
                           </tr>
                         ) : (
-                          labourItems.map((labour, index) => (
-                            <tr key={index} className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
+                          labourItems.map((labour) => (
+                            <tr key={labour.id} className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
                               <td className="px-3 py-3 font-medium text-neutral-100 whitespace-nowrap">{labour.date}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.person}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.type}</td>
-                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.from}</td>
-                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.to}</td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap"><input type="time" value={labour.from} disabled></input></td>
+                              <td className="px-3 py-3 text-neutral-300 whitespace-nowrap"><input type = "time" value={labour.to} disabled></input></td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.hours}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${labour.total.toFixed(2)}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{labour.notes}</td>
+                              <td className="px-3 py-3">
+                                <Button onClick={() => {
+                                  setLabourItems((items) => items.filter((item) => item.id !== labour.id))
+                                }}>
+                                  Delete
+                                </Button>
+                              </td>
                             </tr>
                           ))
                         )}
@@ -739,4 +776,5 @@ export function ProjectSummaryEntry() {
       console.log(err)
     }
   }
+
 }

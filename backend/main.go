@@ -254,6 +254,28 @@ func addEmployees(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(201)
 }
 
+func addLabour(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	var body struct {
+		Date   string  `json:"date"`
+		Person string  `json:"person"`
+		Type   string  `json:"type"`
+		From   string  `json:"from"`
+		To     string  `json:"to"`
+		Hours  string  `json:"hours"`
+		Total  float64 `json:"total"`
+		Notes  string  `json:"notes"`
+	}
+	json.NewDecoder(r.Body).Decode(&body)
+	_, err := db.Exec(r.Context(), "INSERT INTO labour")
+}
+
 func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
