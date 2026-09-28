@@ -55,6 +55,7 @@ func main() {
 	http.HandleFunc("/delete/employees/{id}", deleteEmployeesEntry)
 	http.HandleFunc("/edit/employees/{id}", editEmployees)
 	http.HandleFunc("/extract/materials/invoice", extractMaterials)
+	http.HandleFunc("/clear/file", clearFile)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -757,7 +758,7 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 	type materialList struct {
 		ProductCode string  `json:"product_code"`
 		Description string  `json:"description"`
-		Quantity    int     `json:"quantity"`
+		Quantity    float64 `json:"quantity"`
 		ExGST       float64 `json:"ex_gst"`
 		GST         float64 `json:"gst"`
 		Total       float64 `json:"total"`
@@ -780,4 +781,31 @@ func extractMaterials(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(201)
 	json.NewEncoder(w).Encode(message)
 	_, err = storageClient.RemoveFile("Invoices", []string{body.Name}) //at the end, remove the file once everything has been extracted
+}
+
+func clearFile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if err := godotenv.Load(); err != nil {
+		log.Println("Error loading env in clearFile: ", err.Error())
+	}
+	secretApiKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+	headers := map[string]string{
+		"apikey":        secretApiKey,
+		"Authorization": "Bearer " + secretApiKey,
+	}
+	var body struct {
+		Name string `json:"name"`
+	}
+	json.NewDecoder(r.Body).Decode(&body)
+	storageClient := storage_go.NewClient("https://ybulxbjpaxnltzhhsukn.supabase.co/storage/v1", secretApiKey, headers)
+	if _, err := storageClient.RemoveFile("Invoices", []string{body.Name}); err != nil {
+		log.Println("Error removing file from supabase invoices: ", err.Error())
+	}
+	w.WriteHeader(201)
 }

@@ -512,7 +512,7 @@ export function ProjectSummaryEntry() {
                   <div className="space-y-3 rounded-xl border border-sidebar-border bg-sidebar-accent/20 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="truncate text-sm font-medium text-neutral-200">{file.name}</p>
-                      <Button variant="ghost" size="icon-sm" onClick={clearScan}>
+                      <Button variant="ghost" size="icon-sm" onClick={() => clearScan(file.name)}>
                         <X className="size-4" />
                       </Button>
                     </div>
@@ -531,7 +531,7 @@ export function ProjectSummaryEntry() {
                     <Save className="size-4" />
                     Save Scanned rows to materials
                   </Button>
-                  <Button variant="outline" onClick={clearScan}>
+                  <Button variant="outline" onClick={() => clearScan(file?.name)}>
                     Clear Scan
                   </Button>
                 </div>
@@ -755,8 +755,9 @@ export function ProjectSummaryEntry() {
     setPreviewUrl(next ? URL.createObjectURL(next) : null)
   }
 
-  function clearScan() {
+  async function clearScan(name: string | undefined) {
     loadFile(null)
+    await axios.post("http://localhost:8080/clear/file", {name: name})
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
@@ -771,7 +772,7 @@ export function ProjectSummaryEntry() {
       setMaterialSupplier(result.data.supplier)
       setMaterialTotal(result.data.total)
       console.log(result.data)
-      clearScan()
+      clearScan(name)
     } catch(err){
       console.log(err)
     }
