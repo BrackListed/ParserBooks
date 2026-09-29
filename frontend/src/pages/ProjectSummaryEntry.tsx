@@ -9,6 +9,7 @@ import {
   FileUp,
   Save,
   X,
+  Loader2,
 } from "lucide-react"
 
 import DotGrid from "@/assets/DotGrid"
@@ -65,6 +66,7 @@ export function ProjectSummaryEntry() {
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isDraggingOver, setIsDraggingOver] = useState(false)
+  const [isProcessingInvoice, setIsProcessingInvoice] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [projectName, setProjectName] = useState("")
   const [projectClient, setProjectClient] = useState("")
@@ -125,6 +127,17 @@ export function ProjectSummaryEntry() {
           proximity={50}
         />
       </div>
+      {isProcessingInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-4 rounded-2xl border border-sidebar-border bg-sidebar-accent/90 px-12 py-10 text-center shadow-2xl">
+            <Loader2 className="size-10 animate-spin text-cyan-400" />
+            <div>
+              <p className="text-lg font-semibold text-neutral-100">Processing your invoice...</p>
+              <p className="mt-1 text-sm text-neutral-400">This might take a while.</p>
+            </div>
+          </div>
+        </div>
+      )}
       <SidebarProvider>
         <AppSidebar></AppSidebar>
         <SidebarTrigger></SidebarTrigger>
@@ -773,6 +786,7 @@ export function ProjectSummaryEntry() {
 
   async function extractMaterials(name: string | undefined){
     try{
+      setIsProcessingInvoice(true)
       const result = await axios.post("http://localhost:8080/extract/materials/invoice", {name: name})
       setMaterialDate(result.data.date)
       setMaterialGstTotal(result.data.gst_total)
@@ -783,9 +797,11 @@ export function ProjectSummaryEntry() {
       setMaterialTotal(result.data.total)
       setTempMaterialTotal(result.data.total)
       setMaterialMarkup("")
+      setIsProcessingInvoice(false)
       clearScan(name)
     } catch(err){
       console.log(err)
+      setIsProcessingInvoice(false)
     }
   }
 
