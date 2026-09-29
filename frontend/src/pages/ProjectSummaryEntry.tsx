@@ -87,7 +87,7 @@ export function ProjectSummaryEntry() {
   const [materialEntryGST, setMaterialEntryGST] = useState(0.0)
   const [materialEntryExGSTTotal, setMaterialEntryExGSTTotal] = useState(0.0)
   const [materialEntryTotal, setMaterialEntryTotal] = useState(0.0)
-  const [labourDate, setLabourDate] = useState("")
+  const [labourDate, setLabourDate] = useState(new Date().toLocaleDateString('sv-SE'))
   const [labourEmployee, setLabourEmployee] = useState<employeeEntryType | undefined>(undefined)
   const [labourType, setLabourType] = useState<"Normal" | "Overtime" | string>("Normal")
   const [labourFrom, setLabourFrom] = useState("09:00")
@@ -365,7 +365,9 @@ export function ProjectSummaryEntry() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Date</label>
-                    <Input onChange={(e) => setLabourDate(e.target.value)} type="date" defaultValue="2026-09-20" />
+                    <Input
+                    defaultValue={labourDate}
+                    onChange={(e) => setLabourDate(e.target.value)} type="date"/>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm text-neutral-300">Employee</label>
@@ -427,7 +429,7 @@ export function ProjectSummaryEntry() {
                 <div className="flex flex-col gap-1.5 sm:w-64">
                   <label className="text-sm text-neutral-300">Total</label>
                     <Input
-                      value={labourHours * (labourType === "Normal" ? (labourEmployee?.normal_rate ?? 0) : (labourEmployee?.ot_rate ?? 0))}
+                      value={(labourHours * (labourType === "Normal" ? (labourEmployee?.normal_rate ?? 0) : (labourEmployee?.ot_rate ?? 0))).toFixed(2)}
                       disabled
                       type="number"
                       placeholder="0.00"
@@ -661,6 +663,9 @@ export function ProjectSummaryEntry() {
                           <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
                             Total inc GST
                           </th>
+                          <th className="px-3 py-2 text-left text-xs font-medium tracking-widest text-neutral-400 uppercase">
+                            Action
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -680,6 +685,14 @@ export function ProjectSummaryEntry() {
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${(material.ex_gst * material.quantity).toFixed(2)}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.gst.toFixed(2)}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${material.total.toFixed(2)}</td>
+                              <td className="px-3 py-3">
+                                <button
+                                  type="button"
+                                  className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-sidebar"
+                                >
+                                  Delete
+                                </button>
+                              </td>
                             </tr>
                           ))
                         )}
