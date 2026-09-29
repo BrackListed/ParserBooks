@@ -94,6 +94,7 @@ export function ProjectSummaryEntry() {
   const [labourNotes, setLabourNotes] = useState("")
   const [labourItems, setLabourItems] = useState<labourListType[]>([])
   const [employeeEntries, setEmployeeEntries] = useState<employeeEntryType[]>([])
+  const [tempMaterialTotal, setTempMaterialTotal] = useState(0.0)
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -588,7 +589,7 @@ export function ProjectSummaryEntry() {
                   </div>
                   <div className="rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-100">{materialTotal}</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-100">{materialTotal.toFixed(2)}</p>
                   </div>
                   <div className="rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Invoice</p>
@@ -600,7 +601,12 @@ export function ProjectSummaryEntry() {
                   </div>
                   <div className="flex flex-col gap-1 rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Markup</p>
-                    <Input placeholder="Input Markup here..." className="h-6 p-2 border-0 bg-transparent text-sm" />
+                    <div className="relative">
+                      <Input onChange={(e) => {
+                        setMaterialTotal(tempMaterialTotal * (1 + (Number(e.target.value)/100)))
+                        }} placeholder="Input Markup here..." className="h-6 border-0 bg-transparent p-2 pr-6 text-sm" />
+                      <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-sm text-neutral-400">%</span>
+                    </div>
                   </div>
                   <div className="rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Subtotal</p>
@@ -771,6 +777,7 @@ export function ProjectSummaryEntry() {
       setMaterialSubtotal(result.data.subtotal)
       setMaterialSupplier(result.data.supplier)
       setMaterialTotal(result.data.total)
+      setTempMaterialTotal(result.data.total)
       console.log(result.data)
       clearScan(name)
     } catch(err){
