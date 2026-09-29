@@ -95,6 +95,7 @@ export function ProjectSummaryEntry() {
   const [labourItems, setLabourItems] = useState<labourListType[]>([])
   const [employeeEntries, setEmployeeEntries] = useState<employeeEntryType[]>([])
   const [tempMaterialTotal, setTempMaterialTotal] = useState(0.0)
+  const [materialMarkup, setMaterialMarkup] = useState<string | number>("")
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -602,7 +603,10 @@ export function ProjectSummaryEntry() {
                   <div className="flex flex-col gap-1 rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Markup</p>
                     <div className="relative">
-                      <Input onChange={(e) => {
+                      <Input
+                       value={materialMarkup}
+                       onChange={(e) => {
+                        setMaterialMarkup(Number(e.target.value))
                         setMaterialTotal(tempMaterialTotal * (1 + (Number(e.target.value)/100)))
                         }} placeholder="Input Markup here..." className="h-6 border-0 bg-transparent p-2 pr-6 text-sm" />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-sm text-neutral-400">%</span>
@@ -778,7 +782,7 @@ export function ProjectSummaryEntry() {
       setMaterialSupplier(result.data.supplier)
       setMaterialTotal(result.data.total)
       setTempMaterialTotal(result.data.total)
-      console.log(result.data)
+      setMaterialMarkup("")
       clearScan(name)
     } catch(err){
       console.log(err)
