@@ -605,7 +605,7 @@ export function ProjectSummaryEntry() {
                   </div>
                   <div className="rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-100">{materialTotal.toFixed(2)}</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-100">{materialTotal?.toFixed(2)}</p>
                   </div>
                   <div className="rounded-lg border border-sidebar-border px-3 py-2">
                     <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Invoice</p>
@@ -689,6 +689,9 @@ export function ProjectSummaryEntry() {
                                 <button
                                   type="button"
                                   className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-sidebar"
+                                  onClick={() => {
+                                    setMaterialItems(materialItems.filter((item, i) => i !== index))
+                                  }}
                                 >
                                   Delete
                                 </button>
