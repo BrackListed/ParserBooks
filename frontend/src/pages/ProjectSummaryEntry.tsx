@@ -72,6 +72,7 @@ export function ProjectSummaryEntry() {
   const [projectClient, setProjectClient] = useState("")
   const [projectAddress, setProjectAddress] = useState("")
   const [projectBillingType, setProjectBillingType] = useState<"Standard Charge" | "Contract" | "Cost Plus" | "Maintenance">("Standard Charge")
+  const [projectContractAmount, setProjectContractAmount] = useState(0)
   const [projectInitialVariation, setProjectInitialVariation] = useState(0)
   const [materialDate, setMaterialDate] = useState("")
   const [materialGstTotal, setMaterialGstTotal] = useState(0)
@@ -98,6 +99,9 @@ export function ProjectSummaryEntry() {
   const [employeeEntries, setEmployeeEntries] = useState<employeeEntryType[]>([])
   const [tempMaterialTotal, setTempMaterialTotal] = useState(0.0)
   const [materialMarkup, setMaterialMarkup] = useState<string | number>("")
+  const [labourMarkup, setLabourMarkup] = useState<string | number>("")
+  const tempLabourTotal = labourItems.reduce((accumulator, i) => accumulator + Number(i.total), 0)
+  const [labourTotal, setLabourTotal] = useState(0)
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -213,7 +217,7 @@ export function ProjectSummaryEntry() {
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Contract Amount ex GST</label>
-                        <Input type="number" placeholder="0" />
+                        <Input value={projectContractAmount} onChange={(e) => setProjectContractAmount(Number(e.target.value))} type="number" placeholder="0" />
                       </div>
                     </div>
 
@@ -402,8 +406,8 @@ export function ProjectSummaryEntry() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem id="normal">Normal</SelectItem>
-                          <SelectItem id="overtime">Overtime</SelectItem>
+                          <SelectItem id="Normal">Normal</SelectItem>
+                          <SelectItem id="Overtime">Overtime</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -599,42 +603,67 @@ export function ProjectSummaryEntry() {
                 <div className="h-px w-full bg-sidebar-border" />
 
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-                  <div className="rounded-lg border border-sidebar-border px-3 py-2">
-                    <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Supplier</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-100">{materialSupplier}</p>
-                  </div>
-                  <div className="rounded-lg border border-sidebar-border px-3 py-2">
-                    <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-100">{materialTotal?.toFixed(2)}</p>
-                  </div>
-                  <div className="rounded-lg border border-sidebar-border px-3 py-2">
-                    <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Invoice</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-500">{materialInvoice}</p>
-                  </div>
-                  <div className="rounded-lg border border-sidebar-border px-3 py-2">
-                    <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Date</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-500">{materialDate}</p>
-                  </div>
-                  <div className="flex flex-col gap-1 rounded-lg border border-sidebar-border px-3 py-2">
-                    <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Markup</p>
-                    <div className="relative">
-                      <Input
-                       value={materialMarkup}
-                       onChange={(e) => {
-                        setMaterialMarkup(Number(e.target.value))
-                        setMaterialTotal(tempMaterialTotal * (1 + (Number(e.target.value)/100)))
-                        }} placeholder="Input Markup here..." className="h-6 border-0 bg-transparent p-2 pr-6 text-sm" />
-                      <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-sm text-neutral-400">%</span>
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-sidebar-border px-3 py-2">
-                    <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Subtotal</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-500">{materialSubtotal}</p>
-                  </div>
-                  <div className="rounded-lg border border-sidebar-border px-3 py-2">
-                    <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">GST Total</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-500">{materialGstTotal}</p>
-                  </div>
+                  {registerView === "materials" ? (
+                    <>
+                      <div className="rounded-lg border border-sidebar-border px-3 py-2">
+                        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Supplier</p>
+                        <p className="mt-1 text-sm font-semibold text-neutral-100">{materialSupplier}</p>
+                      </div>
+                      <div className="rounded-lg border border-sidebar-border px-3 py-2">
+                        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total</p>
+                        <p className="mt-1 text-sm font-semibold text-neutral-100">{materialTotal?.toFixed(2)}</p>
+                      </div>
+                      <div className="rounded-lg border border-sidebar-border px-3 py-2">
+                        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Invoice</p>
+                        <p className="mt-1 text-sm font-semibold text-neutral-500">{materialInvoice}</p>
+                      </div>
+                      <div className="rounded-lg border border-sidebar-border px-3 py-2">
+                        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Date</p>
+                        <p className="mt-1 text-sm font-semibold text-neutral-500">{materialDate}</p>
+                      </div>
+                      <div className="flex flex-col gap-1 rounded-lg border border-sidebar-border px-3 py-2">
+                        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Markup</p>
+                        <div className="relative">
+                          <Input
+                           value={materialMarkup}
+                           onChange={(e) => {
+                            setMaterialMarkup(Number(e.target.value))
+                            setMaterialTotal(tempMaterialTotal * (1 + (Number(e.target.value)/100)))
+                            }} placeholder="Input Markup here..." className="h-6 border-0 bg-transparent p-2 pr-6 text-sm" />
+                          <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-sm text-neutral-400">%</span>
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-sidebar-border px-3 py-2">
+                        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Subtotal</p>
+                        <p className="mt-1 text-sm font-semibold text-neutral-500">{materialSubtotal}</p>
+                      </div>
+                      <div className="rounded-lg border border-sidebar-border px-3 py-2">
+                        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">GST Total</p>
+                        <p className="mt-1 text-sm font-semibold text-neutral-500">{materialGstTotal}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="rounded-lg border border-sidebar-border px-3 py-2">
+                        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total</p>
+                        <p className="mt-1 text-sm font-semibold text-neutral-100">
+                          {labourTotal.toFixed(2) || tempLabourTotal.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-1 rounded-lg border border-sidebar-border px-3 py-2">
+                        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Markup</p>
+                        <div className="relative">
+                          <Input
+                            value={labourMarkup}
+                            onChange={(e) => {setLabourMarkup(Number(e.target.value)); setLabourTotal(tempLabourTotal * (1 + (Number(e.target.value)/100)))}}
+                            placeholder="Input Markup here..."
+                            className="h-6 border-0 bg-transparent p-2 pr-6 text-sm"
+                          />
+                          <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-sm text-neutral-400">%</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="overflow-x-auto rounded-lg border border-sidebar-border">
@@ -767,7 +796,9 @@ export function ProjectSummaryEntry() {
                   )}
                 </div>
 
-                <Button className="w-full rounded-lg bg-sky-500 text-white hover:bg-sky-400">
+                <Button onClick={async() => {
+                  await saveProject(projectName, projectClient, projectAddress, projectBillingType, projectContractAmount, projectInitialVariation)
+                }} className="w-full rounded-lg bg-sky-500 text-white hover:bg-sky-400">
                   Save materials alongside project details and labour
                 </Button>
               </BentoGridItem>
@@ -821,4 +852,7 @@ export function ProjectSummaryEntry() {
     }
   }
 
+  async function saveProject(name: string, client: string, address: string, billingType: string, contractAmount: number, intitialVariation: number){
+
+  }
 }
