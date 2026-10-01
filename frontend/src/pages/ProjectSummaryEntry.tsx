@@ -719,7 +719,7 @@ export function ProjectSummaryEntry() {
                                   type="button"
                                   className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-sidebar"
                                   onClick={() => {
-                                    setMaterialItems(materialItems.filter((item, i) => i !== index))
+                                    setMaterialItems(materialItems.filter((_, i) => i !== index))
                                   }}
                                 >
                                   Delete
@@ -797,7 +797,7 @@ export function ProjectSummaryEntry() {
                 </div>
 
                 <Button onClick={async() => {
-                  await saveProject(projectName, projectClient, projectAddress, projectBillingType, projectContractAmount, projectInitialVariation)
+                  await saveProject(projectName, projectClient, projectAddress, projectBillingType, projectContractAmount, projectInitialVariation, materialMarkup, labourMarkup)
                 }} className="w-full rounded-lg bg-sky-500 text-white hover:bg-sky-400">
                   Save materials alongside project details and labour
                 </Button>
@@ -852,7 +852,7 @@ export function ProjectSummaryEntry() {
     }
   }
 
-  async function saveProject(name: string, client: string, address: string, billingType: string, contractAmount: number, intitialVariation: number){
-
+  async function saveProject(name: string, client: string, address: string, billingType: string, contractAmount: number, intitialVariation: number, materialMarkup: string | number, labourMarkup: string | number){
+    await axios.post("http://localhost:8080/add/project", {name: name, client: client, address: address, billingType: billingType, contractAmount: contractAmount, intitialVariation: intitialVariation, materialMarkup: materialMarkup, labourMarkup: labourMarkup})
   }
 }
