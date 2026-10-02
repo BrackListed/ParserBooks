@@ -799,6 +799,7 @@ export function ProjectSummaryEntry() {
                 <Button onClick={async() => {
                   const projectId = uuidv4()
                   await saveProject(projectId, projectName, projectClient, projectAddress, projectBillingType, projectContractAmount, projectInitialVariation, materialMarkup, labourMarkup)
+                  await saveLabour(projectId, labourItems)
                 }} className="w-full rounded-lg bg-sky-500 text-white hover:bg-sky-400">
                   Save materials alongside project details and labour
                 </Button>
@@ -857,5 +858,10 @@ export function ProjectSummaryEntry() {
     await axios.post("http://localhost:8080/add/project", {id: id, name: name, client: client, address: address, billingType: billingType, contractAmount: contractAmount, intitialVariation: intitialVariation, materialMarkup: materialMarkup, labourMarkup: labourMarkup})
   }
 
-  async function saveLabour()
+  async function saveLabour(projectId: string, items: labourListType[]){
+    const promises = items.map((item) => {
+      axios.post(`http://localhost:8080/add/labour/${projectId}`, {date: item.date, employee: item.person, type: item.type, from_time: item.from, to_time: item.to, hours: item.hours, total: item.total, notes: item.notes})
+    })
+    await Promise.all(promises)
+  }
 }
