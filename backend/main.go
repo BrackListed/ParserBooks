@@ -265,6 +265,7 @@ func addProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
+		ID               string  `json:"id"`
 		Name             string  `json:"name"`
 		Client           string  `json:"client"`
 		Address          string  `json:"address"`
@@ -278,7 +279,7 @@ func addProject(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error decoding json in addProject: ", err.Error())
 		http.Error(w, err.Error(), 400)
 	}
-	_, err := db.Exec(r.Context(), "INSERT INTO projects(user_id, name, client, address, billing_type, contract_amount, initial_variation, material_markup, labour_markup) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Name, body.Client, body.Address, body.BillingType, body.ContractAmount, body.InitialVariation, body.MaterialMarkup, body.LabourMarkup)
+	_, err := db.Exec(r.Context(), "INSERT INTO projects(id, user_id, name, client, address, billing_type, contract_amount, initial_variation, material_markup, labour_markup) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Name, body.Client, body.Address, body.BillingType, body.ContractAmount, body.InitialVariation, body.MaterialMarkup, body.LabourMarkup)
 	if err != nil {
 		log.Println("Error inserting into db in addProject: ", err.Error())
 		http.Error(w, err.Error(), 500)

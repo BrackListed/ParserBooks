@@ -797,7 +797,8 @@ export function ProjectSummaryEntry() {
                 </div>
 
                 <Button onClick={async() => {
-                  await saveProject(projectName, projectClient, projectAddress, projectBillingType, projectContractAmount, projectInitialVariation, materialMarkup, labourMarkup)
+                  const projectId = uuidv4()
+                  await saveProject(projectId, projectName, projectClient, projectAddress, projectBillingType, projectContractAmount, projectInitialVariation, materialMarkup, labourMarkup)
                 }} className="w-full rounded-lg bg-sky-500 text-white hover:bg-sky-400">
                   Save materials alongside project details and labour
                 </Button>
@@ -852,7 +853,9 @@ export function ProjectSummaryEntry() {
     }
   }
 
-  async function saveProject(name: string, client: string, address: string, billingType: string, contractAmount: number, intitialVariation: number, materialMarkup: string | number, labourMarkup: string | number){
-    await axios.post("http://localhost:8080/add/project", {name: name, client: client, address: address, billingType: billingType, contractAmount: contractAmount, intitialVariation: intitialVariation, materialMarkup: materialMarkup, labourMarkup: labourMarkup})
+  async function saveProject(id: string, name: string, client: string, address: string, billingType: string, contractAmount: number, intitialVariation: number, materialMarkup: string | number, labourMarkup: string | number){
+    await axios.post("http://localhost:8080/add/project", {id: id, name: name, client: client, address: address, billingType: billingType, contractAmount: contractAmount, intitialVariation: intitialVariation, materialMarkup: materialMarkup, labourMarkup: labourMarkup})
   }
+
+  async function saveLabour()
 }
