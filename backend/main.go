@@ -280,7 +280,7 @@ func addProject(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error decoding json in addProject: ", err.Error())
 		http.Error(w, err.Error(), 400)
 	}
-	_, err := db.Exec(r.Context(), "INSERT INTO projects(id, user_id, name, client, address, billing_type, contract_amount, initial_variation, material_markup, labour_markup) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)", body.ID, "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Name, body.Client, body.Address, body.BillingType, body.ContractAmount, body.InitialVariation, body.MaterialMarkup, body.LabourMarkup)
+	_, err := db.Exec(r.Context(), "INSERT INTO projects(id, user_id, name, client, address, billing_type, contract_amount, initial_variation, material_markup, labour_markup) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", body.ID, "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Name, body.Client, body.Address, body.BillingType, body.ContractAmount, body.InitialVariation, body.MaterialMarkup, body.LabourMarkup)
 	if err != nil {
 		log.Println("Error inserting into db in addProject: ", err.Error())
 		http.Error(w, err.Error(), 500)
@@ -294,26 +294,29 @@ func addLabour(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
+		return
 	}
 	projectId := r.PathValue("projectId")
 	var body struct {
-		Date     time.Time `json:"date"`
-		Employee string    `json:"employee"`
-		Type     string    `json:"type"`
-		From     string    `json:"from_time"`
-		To       string    `json:"to_time"`
-		Hours    int       `json:"hours"`
-		Total    float64   `json:"total"`
-		Notes    string    `json:"notes"`
+		Date     string  `json:"date"`
+		Employee string  `json:"employee"`
+		Type     string  `json:"type"`
+		From     string  `json:"from_time"`
+		To       string  `json:"to_time"`
+		Hours    int     `json:"hours"`
+		Total    float64 `json:"total"`
+		Notes    string  `json:"notes"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Println("Error decoding body in labour: ", err.Error())
 		http.Error(w, err.Error(), 400)
+		return
 	}
-	_, err := db.Exec(r.Context(), "INSERT INTO labour(user_id, project_id, date, employee, type, from_time, to_time, hours, total, notes)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", projectId, body.Date, body.Employee, body.From, body.To, body.Hours, body.Total, body.Notes)
+	_, err := db.Exec(r.Context(), "INSERT INTO labour(user_id, project_id, date, employee, type, from_time, to_time, hours, total, notes) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", projectId, body.Date, body.Employee, body.Type, body.From, body.To, body.Hours, body.Total, body.Notes)
 	if err != nil {
 		log.Println("Error inserting into the labour table: ", err.Error())
 		http.Error(w, err.Error(), 500)
+		return
 	}
 	w.WriteHeader(201)
 }

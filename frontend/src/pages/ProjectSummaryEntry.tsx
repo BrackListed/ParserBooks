@@ -98,8 +98,8 @@ export function ProjectSummaryEntry() {
   const [labourItems, setLabourItems] = useState<labourListType[]>([])
   const [employeeEntries, setEmployeeEntries] = useState<employeeEntryType[]>([])
   const [tempMaterialTotal, setTempMaterialTotal] = useState(0.0)
-  const [materialMarkup, setMaterialMarkup] = useState<string | number>("")
-  const [labourMarkup, setLabourMarkup] = useState<string | number>("")
+  const [materialMarkup, setMaterialMarkup] = useState(0)
+  const [labourMarkup, setLabourMarkup] = useState(0)
   const tempLabourTotal = labourItems.reduce((accumulator, i) => accumulator + Number(i.total), 0)
   const [labourTotal, setLabourTotal] = useState(0)
   useEffect(() => {
@@ -647,7 +647,7 @@ export function ProjectSummaryEntry() {
                       <div className="rounded-lg border border-sidebar-border px-3 py-2">
                         <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total</p>
                         <p className="mt-1 text-sm font-semibold text-neutral-100">
-                          {labourTotal.toFixed(2) || tempLabourTotal.toFixed(2)}
+                          {(labourTotal || tempLabourTotal).toFixed(2)}
                         </p>
                       </div>
                       <div className="flex flex-col gap-1 rounded-lg border border-sidebar-border px-3 py-2">
@@ -845,7 +845,7 @@ export function ProjectSummaryEntry() {
       setMaterialSupplier(result.data.supplier)
       setMaterialTotal(result.data.total)
       setTempMaterialTotal(result.data.total)
-      setMaterialMarkup("")
+      setMaterialMarkup(0)
       setIsProcessingInvoice(false)
       clearScan(name)
     } catch(err){
