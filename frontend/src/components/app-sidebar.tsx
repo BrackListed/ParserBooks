@@ -15,6 +15,8 @@ import {
   FileSpreadsheet,
   Banknote,
   SquarePen,
+  Smartphone,
+  Calculator,
 } from "lucide-react"
 
 import {
@@ -54,6 +56,7 @@ export function AppSidebar() {
   const isPayrollActive = typeof window !== "undefined" && window.location.pathname === "/payroll"
   const isProjectSummaryActive = typeof window !== "undefined" && window.location.pathname === "/projectsummary"
   const isProjectSummaryEntryActive = typeof window !== "undefined" && window.location.pathname === "/projectsummary/entry"
+  const isServiceM8Active = typeof window !== "undefined" && window.location.pathname === "/servicem8"
   return (
     <Sidebar>
       <SidebarHeader className="gap-3 p-3">
@@ -193,6 +196,26 @@ export function AppSidebar() {
               <SidebarMenuButton href = "/payroll" isActive={isPayrollActive}>
                 <Banknote />
                 Payroll
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="uppercase tracking-wider">
+            Integrations
+          </SidebarGroupLabel>
+          <SidebarMenu className="gap-3">
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/servicem8" isActive={isServiceM8Active}>
+                <Smartphone />
+                ServiceM8
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton>
+                <Calculator />
+                Xero
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

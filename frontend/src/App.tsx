@@ -8,6 +8,7 @@ import { Expenses } from "./pages/Expenses";
 import { Payroll } from "./pages/Payroll";
 import { ProjectSummary } from "./pages/ProjectSummary";
 import { ProjectSummaryEntry } from "./pages/ProjectSummaryEntry";
+import { ServiceM8 } from "./pages/ServiceM8";
 
 export default function App(){
   return(
@@ -22,6 +23,7 @@ export default function App(){
         <Route path = "/payroll" element={<Payroll/>}/>
         <Route path = "/projectsummary" element={<ProjectSummary/>}/>
         <Route path = "/projectsummary/entry" element={<ProjectSummaryEntry/>}/>
+        <Route path = "/servicem8" element={<ServiceM8/>}/>
       </Routes>
     </BrowserRouter>
   )
