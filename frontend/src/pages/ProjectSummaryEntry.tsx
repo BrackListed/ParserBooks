@@ -698,14 +698,14 @@ export function ProjectSummaryEntry() {
                         </tr>
                       </thead>
                       <tbody>
-                        {materialItems.length === 0 ? (
+                        {materialItems?.length === 0 ? (
                           <tr>
                             <td colSpan={6} className="px-3 py-6 text-center text-sm text-neutral-500">
                               No materials added to this project yet.
                             </td>
                           </tr>
                         ) : (
-                          materialItems.map((material, index) => (
+                          materialItems?.map((material, index) => (
                             <tr key={index} className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
                               <td className="px-3 py-3 font-medium text-neutral-100 whitespace-nowrap">{material.product_code}</td>
                               <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{material.description}</td>
@@ -719,7 +719,7 @@ export function ProjectSummaryEntry() {
                                   type="button"
                                   className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-sidebar"
                                   onClick={() => {
-                                    setMaterialItems(materialItems.filter((_, i) => i !== index))
+                                    setMaterialItems(materialItems?.filter((_, i) => i !== index))
                                   }}
                                 >
                                   Delete
@@ -800,6 +800,7 @@ export function ProjectSummaryEntry() {
                   const projectId = uuidv4()
                   await saveProject(projectId, projectName, projectClient, projectAddress, projectBillingType, projectContractAmount, projectInitialVariation, materialMarkup, labourMarkup)
                   await saveLabour(projectId, labourItems)
+                  await saveMaterials(projectId, materialInvoice, materialSupplier, materialItems)
                 }} className="w-full rounded-lg bg-sky-500 text-white hover:bg-sky-400">
                   Save materials alongside project details and labour
                 </Button>
@@ -861,6 +862,15 @@ export function ProjectSummaryEntry() {
   async function saveLabour(projectId: string, items: labourListType[]){
     const promises = items.map((item) => {
       axios.post(`http://localhost:8080/add/labour/${projectId}`, {date: item.date, employee: item.person, type: item.type, from_time: item.from, to_time: item.to, hours: item.hours, total: item.total, notes: item.notes})
+    })
+    await Promise.all(promises)
+  }
+
+  async function saveMaterials(projectId: string, materialInvoice: string, materialSupplier: string, materialItems: materialListType[]){
+    const promises = materialItems.map((item) => {
+      const net_price = item.ex_gst * item.quantity
+      const date = materialDate.split("/").reverse().join("/")
+      axios.post(`http://localhost:8080/add/material/${projectId}`, {invoice: materialInvoice, supplier: materialSupplier, productCode: item.product_code, quantity: item.quantity, description: item.description, unit_price: item.ex_gst, net_price: net_price, gst: item.gst, total: item.total, date: date })
     })
     await Promise.all(promises)
   }

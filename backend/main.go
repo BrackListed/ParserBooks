@@ -43,6 +43,7 @@ func main() {
 	http.HandleFunc("/add/invoice", uploadFile)
 	http.HandleFunc("/add/project", addProject)
 	http.HandleFunc("/add/labour/{projectId}", addLabour)
+	http.HandleFunc("/add/material/{projectId}", addMaterial)
 	http.HandleFunc("/get/work-entry", getWorkEntry)
 	http.HandleFunc("/get/maintenance", getMaintenanceEntry)
 	http.HandleFunc("/get/quotations", getQuotationsEntry)
@@ -319,6 +320,42 @@ func addLabour(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(201)
+}
+
+func addMaterial(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	projectId := r.PathValue("projectId")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	var body struct {
+		Invoice     string  `json:"invoice"`
+		Supplier    string  `json:"supplier"`
+		ProductCode string  `json:"productCode"`
+		Quantity    int     `json:"quantity"`
+		Description string  `json:"description"`
+		UnitPrice   float64 `json:"unit_price"`
+		NetPrice    float64 `json:"net_price"`
+		GST         float64 `json:"gst"`
+		Total       float64 `json:"total"`
+		Date        string  `json:"date"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		log.Println("Error decoding body in addMaterial: ", err.Error())
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	_, err := db.Exec(r.Context(), "INSERT INTO materials(user_id, project_id, supplier, invoice, product_code, quantity, description, unit_price, net_price, gst, total, date) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", projectId, body.Supplier, body.Invoice, body.ProductCode, body.Quantity, body.Description, body.UnitPrice, body.NetPrice, body.GST, body.Total, body.Date)
+	if err != nil {
+		log.Println("Error inserting into db in addMaterial: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.WriteHeader(201)
+
 }
 
 func deleteWorkEntry(w http.ResponseWriter, r *http.Request) {
