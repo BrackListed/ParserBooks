@@ -50,6 +50,7 @@ func main() {
 	http.HandleFunc("/get/accounts-payable", getBills)
 	http.HandleFunc("/get/expenses", getExpenses)
 	http.HandleFunc("/get/employees", getEmployees)
+	http.HandleFunc("/get/projects", getProjects)
 	http.HandleFunc("/delete/work-entry/{id}", deleteWorkEntry)
 	http.HandleFunc("/delete/maintenance-schedule/{id}", deleteMaintenanceEntry)
 	http.HandleFunc("/delete/quotations/{id}", deleteQuotationsEntry)
@@ -675,6 +676,45 @@ func getEmployees(w http.ResponseWriter, r *http.Request) {
 		var e employeeType
 		if err := rows.Scan(&e.ID, &e.Employee, &e.NormalRate, &e.OTRate, &e.Payg, &e.Super); err != nil {
 			log.Println("Error scanning rows: ", err.Error())
+		}
+		entries = append(entries, e)
+	}
+	json.NewEncoder(w).Encode(entries)
+}
+
+func getProjects(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	type projectType struct {
+		ID               string    `json:"id"`
+		UserID           string    `json:"user_id"`
+		Name             string    `json:"name"`
+		Client           string    `json:"client"`
+		Address          string    `json:"address"`
+		BillingType      string    `json:"billing_type"`
+		ContractAmount   float64   `json:"contract_amount"`
+		InitialVariation float64   `json:"initial_variation"`
+		UpdatedAt        time.Time `json:"updated_at"`
+		MaterialMarkup   float64   `json:"material_markup"`
+		LabourMarkup     float64   `json:"labour_markup"`
+	}
+	rows, err := db.Query(r.Context(), "SELECT id, user_id, name, client, address, billing_type, contract_amount, initial_variation, updated_at, material_markup, labour_markup FROM projects WHERE user_id = $1 ORDER BY updated_at DESC", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
+	if err != nil {
+		log.Println("Error retrieving projects data at getProjects: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	var entries = []projectType{}
+	for rows.Next() {
+		var e projectType
+		if err := rows.Scan(e.ID, e.UserID, e.Name, e.Client, e.Address, e.BillingType, e.ContractAmount, e.InitialVariation, e.UpdatedAt, e.MaterialMarkup, e.LabourMarkup); err != nil {
+			log.Println("Error scaning rows: ", err.Error())
+			return
 		}
 		entries = append(entries, e)
 	}
