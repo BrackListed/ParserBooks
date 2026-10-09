@@ -730,19 +730,19 @@ func getMaterials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type materialsType struct {
-		ID          string    `json:"id"`
-		UserID      string    `json:"user_id"`
-		ProjectID   string    `json:"project_id"`
-		Supplier    string    `json:"supplier"`
-		Invoice     string    `json:"invoice"`
-		ProductCode string    `json:"product_code"`
-		Quantity    int       `json:"quantity"`
-		Description string    `json:"description"`
-		UnitPrice   float64   `json:"unit_price"`
-		NetPrice    float64   `json:"net_price"`
-		GST         float64   `json:"gst"`
-		Total       float64   `json:"total"`
-		Date        time.Time `json:"date"`
+		ID          string  `json:"id"`
+		UserID      string  `json:"user_id"`
+		ProjectID   string  `json:"project_id"`
+		Supplier    string  `json:"supplier"`
+		Invoice     string  `json:"invoice"`
+		ProductCode string  `json:"product_code"`
+		Quantity    int     `json:"quantity"`
+		Description string  `json:"description"`
+		UnitPrice   float64 `json:"unit_price"`
+		NetPrice    float64 `json:"net_price"`
+		GST         float64 `json:"gst"`
+		Total       float64 `json:"total"`
+		Date        string  `json:"date"`
 	}
 	rows, err := db.Query(r.Context(), "SELECT id, user_id, project_id, supplier, invoice, product_code, quantity, description, unit_price, net_price, gst, total, date FROM materials WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
 	if err != nil {
@@ -755,6 +755,45 @@ func getMaterials(w http.ResponseWriter, r *http.Request) {
 		var e materialsType
 		if err := rows.Scan(e.ID, e.UserID, e.ProjectID, e.Supplier, e.Invoice, e.ProductCode, e.Quantity, e.Description, e.UnitPrice, e.NetPrice, e.GST, e.Total, e.Date); err != nil {
 			log.Println("Error scanning rows in getMaterials: ", err.Error())
+			return
+		}
+		entries = append(entries, e)
+	}
+	json.NewEncoder(w).Encode(entries)
+}
+
+func getLabour(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	type labourType struct {
+		ID        string  `json:"id"`
+		UserID    string  `json:"user_id"`
+		ProjectID string  `json:"project_id"`
+		Date      string  `json:"date"`
+		Employee  string  `json:"employee"`
+		Type      string  `json:"type"`
+		FromTime  string  `json:"from_time"`
+		ToTime    string  `json:"to_time"`
+		Hours     float64 `json:"hours"`
+		Total     float64 `json:"total"`
+		Notes     string  `json:"notes"`
+	}
+	rows, err := db.Query(r.Context(), "SELECT id, user_id, project_id, date, employee, type, from-time, to_time, hours, total, notes FROM labour WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
+	if err != nil {
+		log.Println("Error retrieving data from db in addLabour: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	var entries = []labourType{}
+	for rows.Next() {
+		var e labourType
+		if err := rows.Scan(e.ID, e.UserID, e.ProjectID, e.Date, e.Employee, e.Type, e.FromTime, e.ToTime, e.Hours, e.Total, e.Notes); err != nil {
+			log.Println("Error scanning rows: ", err.Error())
 			return
 		}
 		entries = append(entries, e)

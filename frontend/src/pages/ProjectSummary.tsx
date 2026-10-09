@@ -48,9 +48,24 @@ interface materialsType{
   date: Date
 }
 
+interface labourType{
+  id: string
+  user_id: string
+  project_id: string
+  date: string
+  employee: string
+  type: string
+  from_time: string
+  to_time: string
+  hours: number
+  total: number
+  notes: string
+}
+
 export function ProjectSummary() {
   const [projects, setProjects] = useState<projectType[]>([])
   const [materials, setMaterials] = useState<materialsType[]>([])
+  const [labour, setLabour] = useState<labourType[]>([])
   useEffect(() => {
     const fetchProjects = async() => {
       const result = await axios.get(`http://localhost:8080/get/projects`)
@@ -62,6 +77,8 @@ export function ProjectSummary() {
     }
     const fetchLabour = async() => {
       const result = await axios.get(`http://localhost:8080/get/labour`)
+      setLabour(result.data)
+
     }
     fetchProjects()
     fetchMaterials()
@@ -243,6 +260,8 @@ export function ProjectSummary() {
                       {projects.map((project) => {
                         const projectMaterials = materials.filter((m) => m.project_id == project.id)
                         const materialsTotal = projectMaterials?.reduce((accumulator, i) => accumulator + i.total, 0 )
+                        const projectLabour = labour.filter((l) => l.project_id == project.id)
+                        const labourTotal = projectLabour.reduce((accumulator, i) => accumulator + i.total, 0)
                         return(
                         <tr className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
                         <td className="px-3 py-3">
@@ -267,8 +286,8 @@ export function ProjectSummary() {
                         <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${project.initial_variation}</td>
                         <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${Number(project.contract_amount) + Number(project.initial_variation)}</td>
                         <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${materialsTotal}</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">$1,360.00</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">$36,706.52</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${labourTotal}</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${(Number(project.contract_amount) + Number(project.initial_variation))-(materialsTotal + labourTotal) }</td>
                         <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">0.61%</td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1.5">
