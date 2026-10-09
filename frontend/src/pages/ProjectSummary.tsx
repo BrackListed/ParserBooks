@@ -14,8 +14,59 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useEffect, useState } from "react"
+import axios from "axios"
+
+
+interface projectType{
+  id: string
+  user_id: string
+  name: string
+  client: string
+  address: string
+  billing_type: string
+  contract_amount: number
+  initial_variation: number
+  updated_at: Date
+  material_markup: number
+  labour_markup: number
+}
+
+interface materialsType{
+  id: string
+  user_id: string
+  project_id: string
+  supplier: string
+  invoice: string
+  product_code: string
+  quantity: string
+  description: string
+  unit_price: number
+  net_price: number
+  gst: number
+  total: number
+  date: Date
+}
 
 export function ProjectSummary() {
+  const [projects, setProjects] = useState<projectType[]>([])
+  const [materials, setMaterials] = useState<materialsType[]>([])
+  useEffect(() => {
+    const fetchProjects = async() => {
+      const result = await axios.get(`http://localhost:8080/get/projects`)
+      setProjects(result.data)
+    }
+    const fetchMaterials = async() => {
+      const result = await axios.get(`http:/localhost:8080/get/materials`)
+      setMaterials(result.data)
+    }
+    const fetchLabour = async() => {
+      const result = await axios.get(`http://localhost:8080/get/labour`)
+    }
+    fetchProjects()
+    fetchMaterials()
+    fetchLabour()
+  }, [])
   return (
     <div className="relative w-screen min-h-screen">
       <div className="absolute inset-0 -z-50">
@@ -189,29 +240,33 @@ export function ProjectSummary() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
+                      {projects.map((project) => {
+                        const projectMaterials = materials.filter((m) => m.project_id == project.id)
+                        const materialsTotal = projectMaterials?.reduce((accumulator, i) => accumulator + i.total, 0 )
+                        return(
+                        <tr className="border-b border-sidebar-border last:border-0 hover:bg-sidebar-accent/30">
                         <td className="px-3 py-3">
                           <input type="checkbox" className="size-4 rounded border-sidebar-border" />
                         </td>
                         <td className="px-3 py-3">
                           <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-400">
-                            Ongoing
+                              Ongoing
                             <ChevronDown className="size-3" />
                           </span>
                         </td>
                         <td className="px-3 py-3 font-medium text-neutral-100 whitespace-nowrap">
-                          8 Chicago St, Illinois
+                          {project.address}
                         </td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">Unnamed Client</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">{project.client}</td>
                         <td className="px-3 py-3">
                           <span className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-400 whitespace-nowrap">
-                            Unknown Billing Type
+                            {project.billing_type}
                           </span>
                         </td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">$59,867.59</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">$10,463.84</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">$70,331.43</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">$893.79</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${project.contract_amount}</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${project.initial_variation}</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${Number(project.contract_amount) + Number(project.initial_variation)}</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${materialsTotal}</td>
                         <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">$1,360.00</td>
                         <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">$36,706.52</td>
                         <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">0.61%</td>
@@ -234,7 +289,7 @@ export function ProjectSummary() {
                             </Button>
                           </div>
                         </td>
-                      </tr>
+                      </tr>)})}
                     </tbody>
                   </table>
                 </div>
