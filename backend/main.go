@@ -51,6 +51,8 @@ func main() {
 	http.HandleFunc("/get/expenses", getExpenses)
 	http.HandleFunc("/get/employees", getEmployees)
 	http.HandleFunc("/get/projects", getProjects)
+	http.HandleFunc("/get/labour", getLabour)
+	http.HandleFunc("/get/materials", getMaterials)
 	http.HandleFunc("/delete/work-entry/{id}", deleteWorkEntry)
 	http.HandleFunc("/delete/maintenance-schedule/{id}", deleteMaintenanceEntry)
 	http.HandleFunc("/delete/quotations/{id}", deleteQuotationsEntry)
@@ -712,7 +714,7 @@ func getProjects(w http.ResponseWriter, r *http.Request) {
 	var entries = []projectType{}
 	for rows.Next() {
 		var e projectType
-		if err := rows.Scan(e.ID, e.UserID, e.Name, e.Client, e.Address, e.BillingType, e.ContractAmount, e.InitialVariation, e.UpdatedAt, e.MaterialMarkup, e.LabourMarkup); err != nil {
+		if err := rows.Scan(&e.ID, &e.UserID, &e.Name, &e.Client, &e.Address, &e.BillingType, &e.ContractAmount, &e.InitialVariation, &e.UpdatedAt, &e.MaterialMarkup, &e.LabourMarkup); err != nil {
 			log.Println("Error scaning rows: ", err.Error())
 			return
 		}
@@ -744,7 +746,7 @@ func getMaterials(w http.ResponseWriter, r *http.Request) {
 		Total       float64 `json:"total"`
 		Date        string  `json:"date"`
 	}
-	rows, err := db.Query(r.Context(), "SELECT id, user_id, project_id, supplier, invoice, product_code, quantity, description, unit_price, net_price, gst, total, date FROM materials WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
+	rows, err := db.Query(r.Context(), "SELECT id, user_id, project_id, supplier, invoice, product_code, quantity, description, unit_price, net_price, gst, total, date::text FROM materials WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
 	if err != nil {
 		log.Println("Error scanning rows in getMaterials: ", err.Error())
 		http.Error(w, err.Error(), 500)
@@ -753,7 +755,7 @@ func getMaterials(w http.ResponseWriter, r *http.Request) {
 	var entries = []materialsType{}
 	for rows.Next() {
 		var e materialsType
-		if err := rows.Scan(e.ID, e.UserID, e.ProjectID, e.Supplier, e.Invoice, e.ProductCode, e.Quantity, e.Description, e.UnitPrice, e.NetPrice, e.GST, e.Total, e.Date); err != nil {
+		if err := rows.Scan(&e.ID, &e.UserID, &e.ProjectID, &e.Supplier, &e.Invoice, &e.ProductCode, &e.Quantity, &e.Description, &e.UnitPrice, &e.NetPrice, &e.GST, &e.Total, &e.Date); err != nil {
 			log.Println("Error scanning rows in getMaterials: ", err.Error())
 			return
 		}
@@ -783,7 +785,7 @@ func getLabour(w http.ResponseWriter, r *http.Request) {
 		Total     float64 `json:"total"`
 		Notes     string  `json:"notes"`
 	}
-	rows, err := db.Query(r.Context(), "SELECT id, user_id, project_id, date, employee, type, from-time, to_time, hours, total, notes FROM labour WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
+	rows, err := db.Query(r.Context(), "SELECT id, user_id, project_id, date::text, employee, type, from_time, to_time, hours, total, notes FROM labour WHERE user_id = $1", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5")
 	if err != nil {
 		log.Println("Error retrieving data from db in addLabour: ", err.Error())
 		http.Error(w, err.Error(), 500)
@@ -792,7 +794,7 @@ func getLabour(w http.ResponseWriter, r *http.Request) {
 	var entries = []labourType{}
 	for rows.Next() {
 		var e labourType
-		if err := rows.Scan(e.ID, e.UserID, e.ProjectID, e.Date, e.Employee, e.Type, e.FromTime, e.ToTime, e.Hours, e.Total, e.Notes); err != nil {
+		if err := rows.Scan(&e.ID, &e.UserID, &e.ProjectID, &e.Date, &e.Employee, &e.Type, &e.FromTime, &e.ToTime, &e.Hours, &e.Total, &e.Notes); err != nil {
 			log.Println("Error scanning rows: ", err.Error())
 			return
 		}

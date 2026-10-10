@@ -72,7 +72,7 @@ export function ProjectSummary() {
       setProjects(result.data)
     }
     const fetchMaterials = async() => {
-      const result = await axios.get(`http:/localhost:8080/get/materials`)
+      const result = await axios.get(`http://localhost:8080/get/materials`)
       setMaterials(result.data)
     }
     const fetchLabour = async() => {
@@ -282,12 +282,12 @@ export function ProjectSummary() {
                             {project.billing_type}
                           </span>
                         </td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${project.contract_amount}</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${project.initial_variation}</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${Number(project.contract_amount) + Number(project.initial_variation)}</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${materialsTotal}</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${labourTotal}</td>
-                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${(Number(project.contract_amount) + Number(project.initial_variation))-(materialsTotal + labourTotal) }</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${project.contract_amount.toFixed(2)}</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${project.initial_variation.toFixed(2)}</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${(Number(project.contract_amount) + Number(project.initial_variation)).toFixed(2)}</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${materialsTotal.toFixed(2)}</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${labourTotal.toFixed(2)}</td>
+                        <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">${((Number(project.contract_amount) + Number(project.initial_variation))-(materialsTotal + labourTotal)).toFixed(2)}</td>
                         <td className="px-3 py-3 text-neutral-300 whitespace-nowrap">0.61%</td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1.5">
