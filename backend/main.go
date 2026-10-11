@@ -59,6 +59,7 @@ func main() {
 	http.HandleFunc("/delete/accounts-payable/{id}", deleteBillsEntry)
 	http.HandleFunc("/delete/expenses/{id}", deleteExpensesEntry)
 	http.HandleFunc("/delete/employees/{id}", deleteEmployeesEntry)
+	http.HandleFunc("/delete/projects/{id}", deleteProjectsEntry)
 	http.HandleFunc("/edit/employees/{id}", editEmployees)
 	http.HandleFunc("/extract/materials/invoice", extractMaterials)
 	http.HandleFunc("/clear/file", clearFile)
@@ -463,6 +464,24 @@ func deleteEmployeesEntry(w http.ResponseWriter, r *http.Request) {
 	_, err := db.Exec(r.Context(), "DELETE FROM employees WHERE id = $1", id)
 	if err != nil {
 		log.Println("Error deleting from employee table: ", err.Error())
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	w.WriteHeader(201)
+}
+
+func deleteProjectsEntry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	id := r.PathValue("id")
+	_, err := db.Exec(r.Context(), "DELETE FROM projects WHERE id = $1", id)
+	if err != nil {
+		log.Println("Error deleting from projects table: ", err.Error())
 		http.Error(w, err.Error(), 400)
 		return
 	}

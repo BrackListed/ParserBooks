@@ -295,7 +295,7 @@ export function ProjectSummary() {
                               <FolderOpen className="size-3.5" />
                               Open
                             </Button>
-                            <Button variant="destructive" size="sm">
+                            <Button onClick={() => deleteProject(project.id)} variant="destructive" size="sm">
                               <Trash2 className="size-3.5" />
                               Del
                             </Button>
@@ -319,4 +319,8 @@ export function ProjectSummary() {
       </SidebarProvider>
     </div>
   )
+
+  async function deleteProject(id: string){
+    await axios.delete(`http://localhost:8080/delete/projects/${id}`)
+  }
 }
