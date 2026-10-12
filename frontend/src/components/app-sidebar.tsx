@@ -57,6 +57,7 @@ export function AppSidebar() {
   const isProjectSummaryActive = typeof window !== "undefined" && window.location.pathname === "/projectsummary"
   const isProjectSummaryEntryActive = typeof window !== "undefined" && window.location.pathname === "/projectsummary/entry"
   const isServiceM8Active = typeof window !== "undefined" && window.location.pathname === "/servicem8"
+  const isExcelActive = typeof window !== "undefined" && window.location.pathname === "/excel"
   return (
     <Sidebar>
       <SidebarHeader className="gap-3 p-3">
@@ -179,7 +180,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton>
+              <SidebarMenuButton href = "/excel" isActive={isExcelActive}>
                 <FileSpreadsheet />
                 Import Costs from Excel
               </SidebarMenuButton>
