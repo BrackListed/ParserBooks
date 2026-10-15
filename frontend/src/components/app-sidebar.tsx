@@ -58,6 +58,7 @@ export function AppSidebar() {
   const isProjectSummaryEntryActive = typeof window !== "undefined" && window.location.pathname === "/projectsummary/entry"
   const isServiceM8Active = typeof window !== "undefined" && window.location.pathname === "/servicem8"
   const isExcelActive = typeof window !== "undefined" && window.location.pathname === "/excel"
+  const isRequestActive = typeof window !== "undefined" && window.location.pathname === "/request"
   return (
     <Sidebar>
       <SidebarHeader className="gap-3 p-3">
@@ -142,7 +143,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton>
+              <SidebarMenuButton href = "/request" isActive = {isRequestActive}>
                 <FileSearch />
                 Request for Quotation (RFQ)
               </SidebarMenuButton>

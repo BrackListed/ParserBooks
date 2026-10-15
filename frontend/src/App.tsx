@@ -10,6 +10,7 @@ import { ProjectSummary } from "./pages/ProjectSummary";
 import { ProjectSummaryEntry } from "./pages/ProjectSummaryEntry";
 import { ServiceM8 } from "./pages/ServiceM8";
 import { Excel } from "./pages/Excel";
+import { Request } from "./pages/Request";
 
 export default function App(){
   return(
@@ -26,6 +27,7 @@ export default function App(){
         <Route path = "/projectsummary/entry" element={<ProjectSummaryEntry/>}/>
         <Route path = "/servicem8" element={<ServiceM8/>}/>
         <Route path = "/excel" element={<Excel/>}/>
+        <Route path = "/request" element={<Request/>}/>
       </Routes>
     </BrowserRouter>
   )
