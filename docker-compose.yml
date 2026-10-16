@@ -3,17 +3,27 @@ services:
     image: postgres
     restart: always
     ports:
-    - 5432:5432 
+      - 5432:5432 
     env_file:
-    - ./backend/.env
+      - ./backend/.env
     volumes:
       - pgdata:/var/lib/postgresql/data 
+    networks:
+      - db_net
  
   adminer:
     image: adminer
     restart: always
     ports:
       - 8081:8080
+    networks: 
+      - db_net
  
 volumes:
   pgdata:
+
+networks:
+  db_net:
+    driver: bridge   # Specify driver options
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: "127.0.0.1"
