@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TYPE work_entry_type AS ENUM('Normal', 'Overtime');
-CREATE TABLE work_entry(
+CREATE TABLE IF NOT EXISTS work_entry(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     date DATE NOT NULL,

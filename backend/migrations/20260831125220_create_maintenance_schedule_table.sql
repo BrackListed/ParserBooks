@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE maintenance(
+CREATE TABLE IF NOT EXISTS maintenance(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     property TEXT,

@@ -26,7 +26,7 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("Warning: No ENV string found")
 	}
-	db, err = pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	db, err = pgxpool.New(context.Background(), os.Getenv("DOCKER_URL"))
 	if err != nil {
 		log.Fatal("Failed to connect to db: ", err)
 	}
