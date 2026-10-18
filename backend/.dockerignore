@@ -1,0 +1,39 @@
+# =========================================
+# Go compiled binaries & build outputs
+# =========================================
+*.exe
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+out/
+
+# =========================================
+# Air live-reload artifacts & temp folders
+# =========================================
+tmp/
+.air.toml
+
+# =========================================
+# Environment and sensitive config files
+# =========================================
+.env
+*.log
+
+# =========================================
+# Local development & version control
+# =========================================
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# =========================================
+# Docker-related files
+# =========================================
+Dockerfile*
+.dockerignore

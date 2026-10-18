@@ -18,6 +18,21 @@ services:
       - 8081:8080
     networks: 
       - db_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    restart: always
+    ports:
+      - 8080:8080
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - database
+    networks:
+      - db_net
+
  
 volumes:
   pgdata:
