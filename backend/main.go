@@ -23,8 +23,8 @@ var db *pgxpool.Pool
 
 func main() {
 	var err error
-	if err := godotenv.Load(); err != nil {
-		log.Println("Warning: No ENV string found")
+	if os.Getenv("DOCKER_URL") == "" {
+		log.Println("Error finding env for docker!")
 	}
 	db, err = pgxpool.New(context.Background(), os.Getenv("DOCKER_URL"))
 	if err != nil {
