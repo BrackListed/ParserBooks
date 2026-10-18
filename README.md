@@ -33,6 +33,14 @@ A full-stack construction and project management app (Go + React/Vite) for track
 
 ---
 
+## 🗺️ Roadmap
+
+* **Docker:** Containerize the database and the frontend so the app can be spun up with a single command.
+* **Excel ingestion:** Automatically ingest uploaded Excel files, dissect them, and populate Project Summary without manual mapping.
+* **RabbitMQ & Kafka:** Queue and stream that ingestion/dissection work so large spreadsheets don't block the request.
+
+---
+
 ## 🛠️ Tech Stack
 
 * **Frontend:** React, Vite, TypeScript, Tailwind CSS, react-router-dom
