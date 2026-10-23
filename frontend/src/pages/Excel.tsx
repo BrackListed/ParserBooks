@@ -22,6 +22,7 @@ import {
   TableBody,
   TableCaption,
 } from "@/components/ui/table"
+import axios from "axios"
 
 function FileUploadCard({
   title,
@@ -142,7 +143,10 @@ export function Excel() {
                     title="Project Details"
                     description="Leftmost tables and summary data."
                     file={projectDetailsFile}
-                    onChange={setProjectDetailsFile}
+                    onChange={(file) => {
+                      setProjectDetailsFile(file)
+                      if (file) analyzeFile(file)
+                    }}
                   />
                   <FileUploadCard
                     title="Materials"
@@ -377,4 +381,10 @@ export function Excel() {
       </SidebarProvider>
     </div>
   )
+
+  async function analyzeFile(project: File) {
+    const formData = new FormData
+    formData.append("project", project)
+    await axios.post("http://localhost:8080/analyze/projects", formData)
+  }
 }

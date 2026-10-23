@@ -23,10 +23,11 @@ var db *pgxpool.Pool
 
 func main() {
 	var err error
-	if os.Getenv("DOCKER_URL") == "" {
-		log.Println("Error finding env for docker!")
+	dbURL := os.Getenv("DOCKER_URL")
+	if dbURL == "" {
+		dbURL = os.Getenv("DATABASE_URL")
 	}
-	db, err = pgxpool.New(context.Background(), os.Getenv("DOCKER_URL"))
+	db, err = pgxpool.New(context.Background(), dbURL)
 	if err != nil {
 		log.Fatal("Failed to connect to db: ", err)
 	}
@@ -62,6 +63,7 @@ func main() {
 	http.HandleFunc("/delete/projects/{id}", deleteProjectsEntry)
 	http.HandleFunc("/edit/employees/{id}", editEmployees)
 	http.HandleFunc("/extract/materials/invoice", extractMaterials)
+	http.HandleFunc("/analyze/projects", analyzeProjects)
 	http.HandleFunc("/clear/file", clearFile)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -1028,6 +1030,24 @@ func clearFile(w http.ResponseWriter, r *http.Request) {
 	storageClient := storage_go.NewClient("https://ybulxbjpaxnltzhhsukn.supabase.co/storage/v1", secretApiKey, headers)
 	if _, err := storageClient.RemoveFile("Invoices", []string{body.Name}); err != nil {
 		log.Println("Error removing file from supabase invoices: ", err.Error())
+	}
+	w.WriteHeader(201)
+}
+
+func analyzeProjects(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	project, header, err := r.FormFile("project")
+	log.Println("project content: ", project)
+	log.Println("filename: ", header.Filename)
+	if err != nil {
+		log.Println("Error reading project file in analyzeProjects: ", err.Error())
+		http.Error(w, err.Error(), 400)
 	}
 	w.WriteHeader(201)
 }
