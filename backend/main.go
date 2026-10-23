@@ -16,6 +16,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/ledongthuc/pdf"
 	storage_go "github.com/supabase-community/storage-go"
+	xlsx "github.com/tealeg/xlsx/v3"
 	"google.golang.org/genai"
 )
 
@@ -1043,11 +1044,25 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	project, header, err := r.FormFile("project")
-	log.Println("project content: ", project)
-	log.Println("filename: ", header.Filename)
 	if err != nil {
 		log.Println("Error reading project file in analyzeProjects: ", err.Error())
 		http.Error(w, err.Error(), 400)
+	}
+	log.Println("filename: ", header.Filename)
+	file, err := io.ReadAll(project)
+	if err != nil {
+		log.Println("Unable to read file in analyzeProjects: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	wb, err := xlsx.OpenBinary(file)
+	if err != nil {
+		log.Println("Unable to open project workbook in analyzeProjects: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	for _, content := range wb.Sheets {
+		log.Println(content)
 	}
 	w.WriteHeader(201)
 }
