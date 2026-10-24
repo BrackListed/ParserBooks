@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { FileSpreadsheet, CheckCircle2, Upload } from "lucide-react"
+import { FileSpreadsheet, CheckCircle2, Upload, X } from "lucide-react"
 
 import DotGrid from "@/assets/DotGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -56,6 +56,18 @@ function FileUploadCard({
         <span className="truncate text-sm text-neutral-500">
           {file ? file.name : "No file chosen"}
         </span>
+        {file && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => {
+              onChange(null)
+              if (inputRef.current) inputRef.current.value = ""
+            }}
+          >
+            <X className="size-4" />
+          </Button>
+        )}
       </div>
     </div>
   )

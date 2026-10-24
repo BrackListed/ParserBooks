@@ -1061,8 +1061,8 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	for _, content := range wb.Sheets {
-		log.Println(content)
-	}
+	sh := wb.Sheets[0]
+	maxRow := sh.MaxRow
 	w.WriteHeader(201)
+
 }
