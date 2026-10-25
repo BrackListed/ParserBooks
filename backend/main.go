@@ -1049,12 +1049,11 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error loading env in analyzeProjects: ", err.Error())
 		return
 	}
-	project, header, err := r.FormFile("project") //returns the filestream(project), header(metadata/information), and error
+	project, _, err := r.FormFile("project") //returns the filestream(project), header(metadata/information), and error
 	if err != nil {
 		log.Println("Error reading project file in analyzeProjects: ", err.Error())
 		http.Error(w, err.Error(), 400)
 	}
-	log.Println("filename: ", header.Filename)
 	file, err := io.ReadAll(project) //turn the file stream into bytes to be read by xlsx. Supabase isn't really optimal here, it doesn't need to be saved, plus even if it is we'll still do this
 	if err != nil {
 		log.Println("Unable to read file in analyzeProjects: ", err.Error())
@@ -1101,14 +1100,13 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 		ctx,
 		genai.Part{
 			// Join the collected strings before concatenating because values is a []string.
-			Text: `You are a data extraction assistant. Extract job metadata, cost item breakdowns, and financial summaries from the provided structured spreadsheet text into a valid JSON object matching this strict schema:
+			Text: `You are a data extraction assistant. Extract project details, contract metrics, actual costs, and profit figures from the provided coordinate-mapped spreadsheet text into a valid JSON object matching this strict schema:
 			{
 	"project": [
 		{
 			"project_name": "string or Unnamed Project",
 			"client": "string or Unnamed Client",
 			"address": "string or Unknown Address",
-			"billing_type": "string or Standard Charge",
 			"start_date": "string or unknown",
 			"target_completion_date": "string or unknown",
 			"job_number": "string or unknown",
@@ -1116,23 +1114,18 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 			"initial_variation": "number or 0",
 			"gst": "number or 0",
 			"total_contract_price": "number or 0",
-			"actual_costs": {
-				"materials": "number or 0",
-				"materials_and_labour_variation": "number or 0",
-				"labour_subcon_charge": "number or 0",
-				"total_cost_incurred": "number or 0"
-			},
-			"profit_summary": {
-				"total_contract_price_ex_gst": "number or 0",
-				"total_cost_incurred": "number or 0",
-				"net_profit": "number or 0",
-				"profit_margin": "number or 0"
-			}
+			"materials_actual": "number or 0",
+			"materials_and_labour_variation": "number or 0",
+			"labour_subcon_charge": "number or 0",
+			"total_cost_incurred_actual": "number or 0",
+			"total_contract_price_ex_gst": "number or 0",
+			"net_profit": "number or 0",
+			"profit_margin": "number or 0"
 		}
 	]
 }
 
-Return only valid JSON matching this schema. Use the provided structured spreadsheet text as the source data. If a value is unavailable, use the specified fallback value. Avoid extra additions like backticks that may mess up conversion into a json object.
+Note: Extract values strictly corresponding to their labels such as "Contract Amount ex GST", "Variation Order", "Materials", "Labour / Subcon Charge", and "Net Profit". If a field is blank or missing, use the default values specified in the schema. Return only valid JSON matching this schema. Avoid extra additions like backticks that may mess up conversion into a json object.
 
 Structured spreadsheet text:
 ` + strings.Join(values, "\n"),
@@ -1143,31 +1136,29 @@ Structured spreadsheet text:
 	}
 	stringMessage := ai_response.Text()
 	type ActualCosts struct {
-		Materials                   float64 `json:"materials"`
+		Materials                   float64 `json:"materials_actual"`
 		MaterialsAndLabourVariation float64 `json:"materials_and_labour_variation"`
 		LabourSubconCharge          float64 `json:"labour_subcon_charge"`
-		TotalCostIncurred           float64 `json:"total_cost_incurred"`
-	}
-	type ProfitSummary struct {
-		TotalContractPriceExGST float64 `json:"total_contract_price_ex_gst"`
-		TotalCostIncurred       float64 `json:"total_cost_incurred"`
-		NetProfit               float64 `json:"net_profit"`
-		ProfitMargin            float64 `json:"profit_margin"`
+		TotalCostIncurredActual     float64 `json:"total_cost_incurred_actual"`
 	}
 	type Project struct {
-		ProjectName          string        `json:"project_name"`
-		Client               string        `json:"client"`
-		Address              string        `json:"address"`
-		BillingType          string        `json:"billing_type"`
-		StartDate            string        `json:"start_date"`
-		TargetCompletionDate string        `json:"target_completion_date"`
-		JobNumber            string        `json:"job_number"`
-		ContractAmountExGST  float64       `json:"contract_amount_ex_gst"`
-		InitialVariation     float64       `json:"initial_variation"`
-		GST                  float64       `json:"gst"`
-		TotalContractPrice   float64       `json:"total_contract_price"`
-		ActualCosts          ActualCosts   `json:"actual_costs"`
-		ProfitSummary        ProfitSummary `json:"profit_summary"`
+		ProjectName                 string  `json:"project_name"`
+		Client                      string  `json:"client"`
+		Address                     string  `json:"address"`
+		StartDate                   string  `json:"start_date"`
+		TargetCompletionDate        string  `json:"target_completion_date"`
+		JobNumber                   string  `json:"job_number"`
+		ContractAmountExGST         float64 `json:"contract_amount_ex_gst"`
+		InitialVariation            float64 `json:"initial_variation"`
+		GST                         float64 `json:"gst"`
+		TotalContractPrice          float64 `json:"total_contract_price"`
+		MaterialsActual             float64 `json:"materials_actual"`
+		MaterialsAndLabourVariation float64 `json:"materials_and_labour_variation"`
+		LabourSubconCharge          float64 `json:"labour_subcon_charge"`
+		TotalCostIncurredActual     float64 `json:"total_cost_incurred_actual"`
+		TotalContractPriceExGST     float64 `json:"total_contract_price_ex_gst"`
+		NetProfit                   float64 `json:"net_profit"`
+		ProfitMargin                float64 `json:"profit_margin"`
 	}
 	var response struct {
 		Project []Project `json:"project"`
