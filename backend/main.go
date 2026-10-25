@@ -1044,6 +1044,11 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
+	// var apiKey = os.Getenv("GEMINI_API_KEY")
+	// if err := godotenv.Load(); err != nil {
+	// 	log.Println("Error loading env in analyzeProjects: ", err.Error())
+	// 	return
+	// }
 	project, header, err := r.FormFile("project") //returns the filestream(project), header(metadata/information), and error
 	if err != nil {
 		log.Println("Error reading project file in analyzeProjects: ", err.Error())
@@ -1065,6 +1070,7 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 	sh := wb.Sheets[0]
 	maxRow := sh.MaxRow //provided by xlsx, self explanatory states the max rows
 	maxCol := sh.MaxCol
+	var values []string //declare a dynamic array
 	for row := 0; row <= maxRow; row++ {
 		for col := 0; col <= maxCol; col++ {
 			cell, err := sh.Cell(row, col) //provided by xlsx, loop through the col before moving up the row, required to read cells
@@ -1072,11 +1078,67 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 				log.Println("Error printing out cells: ", err.Error()) //sh.cell requires handling errors, so this is here
 				return
 			}
-			if len(cell.Value) > 1 { //remove whitespace
-				fmt.Println(strings.TrimSpace(cell.Value))
+			if len(strings.TrimSpace(cell.Value)) > 1 { //remove whitespace
+				e := fmt.Sprintf("Row: %d Col: %d Value: %s", row, col, strings.TrimSpace(cell.Value)) //fmt sprintf builds a formatted string, %d is placeholder for int values, %s is placeholder for string values
+				values = append(values, e)
 			}
 		}
 	}
+	fmt.Println(values)
+	// ctx := context.Background()
+	// client, err := genai.NewClient(ctx, &genai.ClientConfig{
+	// 	APIKey:  apiKey,
+	// 	Backend: genai.BackendGeminiAPI,
+	// })
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// chat, err := client.Chats.Create(ctx, "gemini-3.5-flash-lite", nil, nil)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// var ai_response *genai.GenerateContentResponse
+	// if ai_response, err = chat.SendMessage(
+	// 	ctx,
+	// 	genai.Part{
+	// 		Text: `You are an expert data extraction AI. Extract the invoice details from the provided text/image and format them into the exact JSON schema specified below.
+	// 				Do not create supplier-specific rules. Instead, semantically map the corresponding fields from the document into the target JSON keys.
+	// 				Target JSON Schema:
+	// 				{
+	// 					"supplier": "string (The company issuing the invoice, e.g., 'Reece', 'Hobs Piping', 'ALC Plumbing')",
+	//           			"date": "string (The invoice issue date normalized to DD/MM/YYYY format)",
+	//           			"invoice": "string (The invoice number, ID, or reference number)",
+	// 					"items": [
+	//             			{
+	//               				"product_code": "string (Product code, item SKU, or 'N/A' if missing/not applicable)",
+	//               				"description": "string (Line item description, labor details, service rendered, or item name)",
+	//               				"quantity": "number (Quantity supplied or hours worked)",
+	//               				"ex_gst": "number (Unit price BEFORE GST or hourly rate before GST)",
+	//               				"gst": "number (Total GST amount for this line item. If not specified per item, calculate it as 10 percent of the item's total ex-GST value if taxable)",
+	//               				"total": "number (Total price for this line item including GST)"
+	//             			}
+	// 					],
+	// 					"subtotal": "number (Sum of all items ex-GST)",
+	//           			"gst_total": "number (Total GST for the document)",
+	//           			"total": "number (Grand total including GST)"
+	// 				}
+	// 				Field Extraction Guidelines:
+	//           		- Supplier: Identify the main billing entity/header. (e.g., If 'Reece Australia Pty Ltd' or 'Samios Plumbing Supplies' is at the top, capture the first word, like 'Bayon', 'Samios, 'Reece', 'ALC').
+	//           		- Subcontractor Labor: If the invoice tracks labor hours (e.g., 'Internals 6 hours' or 'rough in at pagewood'), map 'hours' to 'quantity' and 'hourly rate' to 'ex_gst'.
+	//           		- Non-Taxable/Reimbursements: If an item explicitly indicates it is non-taxable (e.g., parking fees, specific bills), set its 'gst' to 0.
+
+	//         		Fallback Rules:
+	//          		- Never use null or leave keys out.
+	//           		- For any missing text fields, use "To be determined".
+	//           		- For any missing or unresolvable number fields, use 0.
+	//           		- Output ONLY the raw JSON object. Do not include markdown formatting code blocks, intro text, or explanations
+	// 				---INVOICE---
+	// 				` + newText,
+	// 	},
+	// ); err != nil {
+	// 	log.Println("Error soliciting response from Gemini in Extract Materials: ", err.Error())
+	// 	return
+	// }
 	w.WriteHeader(201)
 
 }
