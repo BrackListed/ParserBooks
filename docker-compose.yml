@@ -33,6 +33,19 @@ services:
     networks:
       - db_net
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    restart: always
+    ports:
+      - 5173:5173
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - db_net
+
  
 volumes:
   pgdata:

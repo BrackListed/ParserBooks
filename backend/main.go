@@ -1045,10 +1045,6 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var apiKey = os.Getenv("GEMINI_API_KEY")
-	if err := godotenv.Load(); err != nil {
-		log.Println("Error loading env in analyzeProjects: ", err.Error())
-		return
-	}
 	project, _, err := r.FormFile("project") //returns the filestream(project), header(metadata/information), and error
 	if err != nil {
 		log.Println("Error reading project file in analyzeProjects: ", err.Error())

@@ -6,8 +6,6 @@ A full-stack construction and project management app for tracking project financ
 
 ## ⚡ Getting Started
 
-The whole stack runs in Docker, database included.
-
 1. Install [Docker](https://www.docker.com/products/docker-desktop/).
 2. From the project root, run:
 
@@ -15,7 +13,7 @@ The whole stack runs in Docker, database included.
    docker compose up --build
    ```
 
-That starts the frontend, backend, and database together.
+   This starts the database, Adminer, the backend API, and the frontend.
 
 | Service | URL |
 |---|---|
@@ -33,32 +31,23 @@ That starts the frontend, backend, and database together.
 * **Project Summary Entry** — create projects, add labour entries, add material entries.
 * **Maintenance Schedule** — add, view, and delete property maintenance records.
 
-### 🤖 Invoice Scanning
-* **AI Invoice Scanner** — upload an invoice PDF and the backend extracts its text and sends it to Google Gemini to pull out supplier, date, invoice number, and line items, ready to drop into the materials register.
+### 🤖 AI-Assisted Entry
+* **Invoice Scanner** — upload an invoice PDF and the backend extracts its text and sends it to Google Gemini to pull out supplier, date, invoice number, and line items, ready to drop into the materials register.
+* **Excel Ingestion (early)** — uploading a Project Details spreadsheet on the Import from Excel page parses every cell and sends it to Gemini to extract project name, client, contract amounts, actual costs, and profit/margin. This currently logs the extracted result to the console rather than saving it; Materials, Labour, and Variation uploads don't parse yet.
 
 ### 📅 Operations & Accounting
 * **Work Calendar** — daily worker hours and project assignments.
 * **Quotations Register** — client quotes, references, statuses, sent-via channels.
+* **Request for Quotation (RFQ)** — a page for pasting client emails and drafting a quote from them; currently a static layout, not wired to extraction or the Quotations register yet.
 * **Accounts Payable & Expenses** — supplier bills and operating expenses, with GST calculation.
 * **Payroll** — employee records, rates, PAYG, super.
 
 ---
 
-## 🧭 Not built yet
-
-* Completed Jobs, Request for Quotation (RFQ), Customer Invoices, Import Costs from Excel, and Xero: no backend routes, dead sidebar links.
-* ServiceM8: page exists, no integration logic.
-* Excel import/export.
-* RFQ parsing and a variation-document parsing engine.
-* Login and user accounts. The app currently runs against a single fixed user.
-* Editing. Only employees can be edited after creation; everything else can be added or deleted but not edited.
-
----
-
 ## 🗺️ Roadmap
 
-* **Excel ingestion** — automatically ingest uploaded Excel files, dissect them, and populate Project Summary without manual mapping.
-* **RabbitMQ & Kafka** — queue and stream that ingestion/dissection work so large spreadsheets don't block the request.
+* **Full Excel ingestion** — extend the Project Details parsing to Materials, Labour, and Variation sheets, and save the extracted data straight into Project Summary instead of just logging it.
+* **Goroutines** — run that ingestion/dissection work concurrently so large spreadsheets don't block the request.
 
 ---
 
@@ -68,4 +57,15 @@ That starts the frontend, backend, and database together.
 * **Backend:** Go, PostgreSQL
 * **File storage:** Supabase Storage
 * **AI:** Google Gemini
+* **Excel parsing:** tealeg/xlsx
 * **Infra:** Docker, Docker Compose
+
+---
+
+## 🧭 Not built yet
+
+* Completed Jobs, Customer Invoices, and Xero: no backend routes, dead sidebar links.
+* ServiceM8: page exists, no integration logic.
+* RFQ email parsing and a variation-document parsing engine.
+* Login and user accounts. The app currently runs against a single fixed user.
+* Editing. Only employees can be edited after creation; everything else can be added or deleted but not edited.
