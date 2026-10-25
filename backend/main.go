@@ -1142,7 +1142,39 @@ Structured spreadsheet text:
 		return
 	}
 	stringMessage := ai_response.Text()
-	log.Println(stringMessage)
-	w.WriteHeader(201)
-
+	type ActualCosts struct {
+		Materials                   float64 `json:"materials"`
+		MaterialsAndLabourVariation float64 `json:"materials_and_labour_variation"`
+		LabourSubconCharge          float64 `json:"labour_subcon_charge"`
+		TotalCostIncurred           float64 `json:"total_cost_incurred"`
+	}
+	type ProfitSummary struct {
+		TotalContractPriceExGST float64 `json:"total_contract_price_ex_gst"`
+		TotalCostIncurred       float64 `json:"total_cost_incurred"`
+		NetProfit               float64 `json:"net_profit"`
+		ProfitMargin            float64 `json:"profit_margin"`
+	}
+	type Project struct {
+		ProjectName          string        `json:"project_name"`
+		Client               string        `json:"client"`
+		Address              string        `json:"address"`
+		BillingType          string        `json:"billing_type"`
+		StartDate            string        `json:"start_date"`
+		TargetCompletionDate string        `json:"target_completion_date"`
+		JobNumber            string        `json:"job_number"`
+		ContractAmountExGST  float64       `json:"contract_amount_ex_gst"`
+		InitialVariation     float64       `json:"initial_variation"`
+		GST                  float64       `json:"gst"`
+		TotalContractPrice   float64       `json:"total_contract_price"`
+		ActualCosts          ActualCosts   `json:"actual_costs"`
+		ProfitSummary        ProfitSummary `json:"profit_summary"`
+	}
+	var response struct {
+		Project []Project `json:"project"`
+	}
+	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
+		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
+		return
+	}
+	json.NewEncoder(w).Encode(response)
 }

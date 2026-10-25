@@ -397,6 +397,7 @@ export function Excel() {
   async function analyzeFile(project: File) {
     const formData = new FormData
     formData.append("project", project)
-    await axios.post("http://localhost:8080/analyze/projects", formData)
+    const result = await axios.post("http://localhost:8080/analyze/projects", formData)
+    console.log(result.data)
   }
 }
