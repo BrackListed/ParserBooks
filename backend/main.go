@@ -10,6 +10,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -1043,26 +1044,39 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	project, header, err := r.FormFile("project")
+	project, header, err := r.FormFile("project") //returns the filestream(project), header(metadata/information), and error
 	if err != nil {
 		log.Println("Error reading project file in analyzeProjects: ", err.Error())
 		http.Error(w, err.Error(), 400)
 	}
 	log.Println("filename: ", header.Filename)
-	file, err := io.ReadAll(project)
+	file, err := io.ReadAll(project) //turn the file stream into bytes to be read by xlsx. Supabase isn't really optimal here, it doesn't need to be saved, plus even if it is we'll still do this
 	if err != nil {
 		log.Println("Unable to read file in analyzeProjects: ", err.Error())
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	wb, err := xlsx.OpenBinary(file)
+	wb, err := xlsx.OpenBinary(file) //openbinary is the only way to read bytes, other methods require reading the files/filepath
 	if err != nil {
 		log.Println("Unable to open project workbook in analyzeProjects: ", err.Error())
 		http.Error(w, err.Error(), 500)
 		return
 	}
 	sh := wb.Sheets[0]
-	maxRow := sh.MaxRow
+	maxRow := sh.MaxRow //provided by xlsx, self explanatory states the max rows
+	maxCol := sh.MaxCol
+	for row := 0; row <= maxRow; row++ {
+		for col := 0; col <= maxCol; col++ {
+			cell, err := sh.Cell(row, col) //provided by xlsx, loop through the col before moving up the row, required to read cells
+			if err != nil {
+				log.Println("Error printing out cells: ", err.Error()) //sh.cell requires handling errors, so this is here
+				return
+			}
+			if len(cell.Value) > 1 { //remove whitespace
+				fmt.Println(strings.TrimSpace(cell.Value))
+			}
+		}
+	}
 	w.WriteHeader(201)
 
 }
