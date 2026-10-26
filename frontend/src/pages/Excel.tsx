@@ -73,6 +73,21 @@ function FileUploadCard({
   )
 }
 
+
+interface projectType{
+  address: string
+  billing_type: string
+  client: string
+  contract_amount_ex_gst: number
+  gst: number
+  initial_variation: number
+  net_profit: number
+  profit_margin: number
+  project_name: string
+  start_date: string
+  target_completion_date: string
+  total_contract_price: number
+}
 export function Excel() {
   const [previewTab, setPreviewTab] = useState<"project" | "materials" | "labour" | "variation">("project")
   const [variationTab, setVariationTab] = useState<"summary" | "materials" | "labour">("summary")
@@ -81,6 +96,7 @@ export function Excel() {
   const [materialsFile, setMaterialsFile] = useState<File | null>(null)
   const [labourFile, setLabourFile] = useState<File | null>(null)
   const [variationFile, setVariationFile] = useState<File | null>(null)
+  const [project, setProject] = useState<projectType | null>(null)
 
   return (
     <div className="relative w-screen min-h-screen">
@@ -227,8 +243,73 @@ export function Excel() {
                 <div className="h-px w-full bg-sidebar-border" />
 
                 {previewTab === "project" && (
-                  <div className="rounded-lg border border-sidebar-border px-4 py-6 text-center text-sm text-neutral-400">
-                    Select a Project Spreadsheet to get started!
+                  <div className="rounded-lg border border-sidebar-border p-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Project Name</label>
+                        <Input placeholder="Unnamed Project" value={project?.project_name ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Client</label>
+                        <Input placeholder="Unnamed Client" value={project?.client ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5 sm:col-span-2">
+                        <label className="text-sm text-neutral-300">Address</label>
+                        <Input placeholder="No address" value={project?.address ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Billing Type</label>
+                        <Select placeholder="Select billing type" selectedKey={project?.billing_type ?? null}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectItem id="Standard Charge">Standard Charge</SelectItem>
+                              <SelectItem id="Contract">Contract</SelectItem>
+                              <SelectItem id="Cost Plus">Cost Plus</SelectItem>
+                              <SelectItem id="Maintenance">Maintenance</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Contract Amount Ex GST</label>
+                        <Input type="number" placeholder="0" value={project?.contract_amount_ex_gst ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">GST</label>
+                        <Input type="number" placeholder="0" value={project?.gst ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Contract Amount Inc GST</label>
+                        <Input type="number" placeholder="0" value={project?.total_contract_price ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Initial Variation</label>
+                        <Input type="number" placeholder="0" value={project?.initial_variation ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Cost Incurred</label>
+                        <Input type="number" placeholder="0" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Profit Margin</label>
+                        <Input type="number" placeholder="0" value={project?.profit_margin ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Profit</label>
+                        <Input type="number" placeholder="0" value={project?.net_profit ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Start Date</label>
+                        <Input type="date" className="[color-scheme:dark]" value={project?.start_date ?? ""} />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-neutral-300">Target Completion Date</label>
+                        <Input type="date" className="[color-scheme:dark]" value={project?.target_completion_date ?? ""} />
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -398,6 +479,6 @@ export function Excel() {
     const formData = new FormData
     formData.append("project", project)
     const result = await axios.post("http://localhost:8080/analyze/projects", formData)
-    console.log(result.data)
+    setProject(result.data.project[0])
   }
 }

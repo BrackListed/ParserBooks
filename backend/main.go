@@ -1044,6 +1044,9 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
+	if err := godotenv.Load(); err != nil {
+		log.Println("ENV failed to load in Extract Materials: ", err.Error())
+	}
 	var apiKey = os.Getenv("GEMINI_API_KEY")
 	project, _, err := r.FormFile("project") //returns the filestream(project), header(metadata/information), and error
 	if err != nil {
