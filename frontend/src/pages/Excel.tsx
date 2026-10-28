@@ -479,6 +479,16 @@ export function Excel() {
     const formData = new FormData
     formData.append("project", project)
     const result = await axios.post("http://localhost:8080/analyze/projects", formData)
-    setProject(result.data.project[0])
+    console.log(result.data.project[0])
+    const gottenProject = result.data.project[0]
+    const convertDate = (date: string) => {
+      const [month, day, year] = date.split("/")
+      return `${year}-${month}-${day}`
+    }
+    setProject({
+      ...gottenProject,
+      start_date: convertDate(gottenProject.start_date),
+      target_completion_date: convertDate(gottenProject.target_completion_date),
+    })
   }
 }
