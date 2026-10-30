@@ -1229,17 +1229,23 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	var ai_response *genai.GenerateContentResponse
+	log.Println("AI is now processing message")
 	if ai_response, err = chat.SendMessage(
 		ctx,
 		genai.Part{
 			// Join the collected strings before concatenating because values is a []string.
-			Text: `Map spreadsheet columns to fields. Return JSON only.
-      You are given a "header" row and one "sample" data row from the same sheet, so you can see where the actual values sit before mapping.
-      Fields (column number, or null): product_code, date, supplier, invoice, quantity, description, unit_price, total
-      Also return "total_inc_gst": true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false.
-      Shape: {"product_code":n,"date":n,"supplier":n,"invoice":n,"quantity":n,"description":n,"unit_price":n,"total":n,"total_inc_gst":bool}
-      Only assign a column number if that field clearly exists in the header. If a field has no matching column, set it to null. Do NOT shift or guess — a missing field is null, never a borrowed index.
-      The column numbers start from 0. Leave out markdowns and send pure json.
+			Text: `Extract materials data from a spreadsheet. Return JSON only.
+      You are given the entire sheet, one non-empty cell per line, in the format "Row: r Col: c Value: v". Use the header row to identify which column holds each field, then read every data row beneath it.
+      Return exactly this shape and nothing else, with one object in "materials" for each data row:
+      {"materials":[{"product_code":"string","date":"string","supplier":"string","invoice":"string","quantity":integer,"description":"string","unit_price":number,"total":number,"total_inc_gst":bool}]}
+      Skip the header row, blank rows, and summary rows such as subtotals or grand totals.
+      "total_inc_gst" is true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false. Use the same value for every row.
+      Only fill a field from a column that clearly matches it in the header. Do NOT shift or guess — never borrow a value from a neighbouring column.
+      If a field is missing, use "" for string fields and 0 for number fields. Never use null or leave keys out.
+      Numbers must be plain JSON numbers with no currency symbols, commas or quotes. "quantity" must be a whole number with no decimal point.
+      Leave out markdowns and send pure json. Do not include your earlier 3 backticks with json too.
+
+      Spreadsheet cells:
       ` + strings.Join(values, "\n"),
 		},
 	); err != nil {
@@ -1247,17 +1253,22 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	stringMessage := ai_response.Text()
-	var response struct {
-		ProductCode string `json:"product_code"`
-		Date        string `json:"date"`
-		Supplier    string `json:"supplier"`
-		Invoice     string `json:"invoice"`
-		Quantity    *int   `json:"quantity"`
-		Description string `json:"description"`
-		UnitPrice   *int   `json:"unit_price"`
-		Total       *int   `json:"total"`
-		TotalIncGST bool   `json:"total_inc_gst"`
+	type Materials struct {
+		ProductCode string  `json:"product_code"`
+		Date        string  `json:"date"`
+		Supplier    string  `json:"supplier"`
+		Invoice     string  `json:"invoice"`
+		Quantity    int     `json:"quantity"`
+		Description string  `json:"description"`
+		UnitPrice   float64 `json:"unit_price"`
+		Total       float64 `json:"total"`
+		TotalIncGST bool    `json:"total_inc_gst"`
 	}
+	var response struct {
+		Materials []Materials `json:"materials"`
+	}
+	log.Println(stringMessage)
+	log.Println("AI is done processing")
 	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
 		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
 		return
