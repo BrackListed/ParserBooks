@@ -173,14 +173,17 @@ export function Excel() {
                     file={projectDetailsFile}
                     onChange={(file) => {
                       setProjectDetailsFile(file)
-                      if (file) analyzeFile(file)
+                      if (file) analyzeProjectFile(file)
                     }}
                   />
                   <FileUploadCard
                     title="Materials"
                     description="Material lists and related cost lines."
                     file={materialsFile}
-                    onChange={setMaterialsFile}
+                    onChange={(file) => {
+                      setMaterialsFile(file)
+                      if(file) analyzeMaterialsFile(file)
+                    }}
                   />
                   <FileUploadCard
                     title="Labour"
@@ -475,7 +478,7 @@ export function Excel() {
     </div>
   )
 
-  async function analyzeFile(project: File) {
+  async function analyzeProjectFile(project: File) {
     const formData = new FormData
     formData.append("project", project)
     const result = await axios.post("http://localhost:8080/analyze/projects", formData)
@@ -490,5 +493,12 @@ export function Excel() {
       start_date: convertDate(gottenProject.start_date),
       target_completion_date: convertDate(gottenProject.target_completion_date),
     })
+  }
+
+  async function analyzeMaterialsFile(materials: File){
+    const formData = new FormData()
+    formData.append("materials", materials)
+    const result = await axios.post("http://localhost:8080/analyze/materials", formData)
+    console.log(result.data)
   }
 }

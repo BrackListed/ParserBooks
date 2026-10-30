@@ -66,6 +66,7 @@ func main() {
 	http.HandleFunc("/edit/employees/{id}", editEmployees)
 	http.HandleFunc("/extract/materials/invoice", extractMaterials)
 	http.HandleFunc("/analyze/projects", analyzeProjects)
+	http.HandleFunc("/analyze/materials", analyzeMaterials)
 	http.HandleFunc("/clear/file", clearFile)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -1130,7 +1131,7 @@ Structured spreadsheet text:
 ` + strings.Join(values, "\n"),
 		},
 	); err != nil {
-		log.Println("Error soliciting response from Gemini in Extract Materials: ", err.Error())
+		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
 		return
 	}
 	stringMessage := ai_response.Text()
@@ -1161,6 +1162,101 @@ Structured spreadsheet text:
 	}
 	var response struct {
 		Project []Project `json:"project"`
+	}
+	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
+		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
+		return
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
+func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if err := godotenv.Load(); err != nil {
+		log.Println("ENV failed to load in Extract Materials: ", err.Error())
+	}
+	var apiKey = os.Getenv("GEMINI_API_KEY")
+	materials, _, err := r.FormFile("materials") //returns the filestream(project), header(metadata/information), and error
+	if err != nil {
+		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
+		http.Error(w, err.Error(), 400)
+	}
+	file, err := io.ReadAll(materials) //turn the file stream into bytes to be read by xlsx. Supabase isn't really optimal here, it doesn't need to be saved, plus even if it is we'll still do this
+	if err != nil {
+		log.Println("Unable to read file in analyzeProjects: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	wb, err := xlsx.OpenBinary(file) //openbinary is the only way to read bytes, other methods require reading the files/filepath
+	if err != nil {
+		log.Println("Unable to open project workbook in analyzeProjects: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	sh := wb.Sheets[0]
+	maxRow := sh.MaxRow //provided by xlsx, self explanatory states the max rows
+	maxCol := sh.MaxCol
+	var values []string //declare a dynamic array
+	for row := 0; row <= maxRow; row++ {
+		for col := 0; col <= maxCol; col++ {
+			cell, err := sh.Cell(row, col) //provided by xlsx, loop through the col before moving up the row, required to read cells
+			if err != nil {
+				log.Println("Error printing out cells: ", err.Error()) //sh.cell requires handling errors, so this is here
+				return
+			}
+			if len(strings.TrimSpace(cell.Value)) > 1 { //remove whitespace
+				e := fmt.Sprintf("Row: %d Col: %d Value: %s", row, col, strings.TrimSpace(cell.Value)) //fmt sprintf builds a formatted string, %d is placeholder for int values, %s is placeholder for string values
+				values = append(values, e)
+			}
+		}
+	}
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	chat, err := client.Chats.Create(ctx, "gemini-3.5-flash-lite", nil, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var ai_response *genai.GenerateContentResponse
+	if ai_response, err = chat.SendMessage(
+		ctx,
+		genai.Part{
+			// Join the collected strings before concatenating because values is a []string.
+			Text: `Map spreadsheet columns to fields. Return JSON only.
+      You are given a "header" row and one "sample" data row from the same sheet, so you can see where the actual values sit before mapping.
+      Fields (column number, or null): product_code, date, supplier, invoice, quantity, description, unit_price, total
+      Also return "total_inc_gst": true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false.
+      Shape: {"product_code":n,"date":n,"supplier":n,"invoice":n,"quantity":n,"description":n,"unit_price":n,"total":n,"total_inc_gst":bool}
+      Only assign a column number if that field clearly exists in the header. If a field has no matching column, set it to null. Do NOT shift or guess — a missing field is null, never a borrowed index.
+      The column numbers start from 0. Leave out markdowns and send pure json.
+      ` + strings.Join(values, "\n"),
+		},
+	); err != nil {
+		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
+		return
+	}
+	stringMessage := ai_response.Text()
+	var response struct {
+		ProductCode string `json:"product_code"`
+		Date        string `json:"date"`
+		Supplier    string `json:"supplier"`
+		Invoice     string `json:"invoice"`
+		Quantity    *int   `json:"quantity"`
+		Description string `json:"description"`
+		UnitPrice   *int   `json:"unit_price"`
+		Total       *int   `json:"total"`
+		TotalIncGST bool   `json:"total_inc_gst"`
 	}
 	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
 		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
