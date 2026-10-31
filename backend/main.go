@@ -1096,7 +1096,7 @@ func analyzeProjects(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	var ai_response *genai.GenerateContentResponse
-	if ai_response, err = chat.SendMessage(
+	for ai_response, err = range chat.SendMessageStream(
 		ctx,
 		genai.Part{
 			// Join the collected strings before concatenating because values is a []string.
@@ -1130,7 +1130,9 @@ Note: Extract values strictly corresponding to their labels such as "Contract Am
 Structured spreadsheet text:
 ` + strings.Join(values, "\n"),
 		},
-	); err != nil {
+	) {
+	}
+	if err != nil {
 		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
 		return
 	}
@@ -1216,6 +1218,9 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	log.Println("Sending")
+	go sliceMaterials(strings.Join(values, "\n"))
+	log.Println("Have sent")
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  apiKey,
@@ -1229,30 +1234,36 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	var ai_response *genai.GenerateContentResponse
+	var stringMessage strings.Builder
 	log.Println("AI is now processing message")
-	if ai_response, err = chat.SendMessage(
+	for ai_response, err = range chat.SendMessageStream( //sendmessagestream requires iter2, which follows for v := range seq
 		ctx,
 		genai.Part{
 			// Join the collected strings before concatenating because values is a []string.
 			Text: `Extract materials data from a spreadsheet. Return JSON only.
-      You are given the entire sheet, one non-empty cell per line, in the format "Row: r Col: c Value: v". Use the header row to identify which column holds each field, then read every data row beneath it.
-      Return exactly this shape and nothing else, with one object in "materials" for each data row:
-      {"materials":[{"product_code":"string","date":"string","supplier":"string","invoice":"string","quantity":integer,"description":"string","unit_price":number,"total":number,"total_inc_gst":bool}]}
-      Skip the header row, blank rows, and summary rows such as subtotals or grand totals.
-      "total_inc_gst" is true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false. Use the same value for every row.
-      Only fill a field from a column that clearly matches it in the header. Do NOT shift or guess — never borrow a value from a neighbouring column.
-      If a field is missing, use "" for string fields and 0 for number fields. Never use null or leave keys out.
-      Numbers must be plain JSON numbers with no currency symbols, commas or quotes. "quantity" must be a whole number with no decimal point.
-      Leave out markdowns and send pure json. Do not include your earlier 3 backticks with json too.
+	  You are given the entire sheet, one non-empty cell per line, in the format "Row: r Col: c Value: v". Use the header row to identify which column holds each field, then read every data row beneath it.
+	  Return exactly this shape and nothing else, with one object in "materials" for each data row:
+	  {"materials":[{"product_code":"string","date":"string","supplier":"string","invoice":"string","quantity":number,"description":"string","unit_price":number,"total":number,"total_inc_gst":bool}]}
+	  Skip the header row, blank rows, and summary rows such as subtotals or grand totals.
+	  "total_inc_gst" is true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false. Use the same value for every row.
+	  Only fill a field from a column that clearly matches it in the header. Do NOT shift or guess — never borrow a value from a neighbouring column.
+	  If a field is missing, use "" for string fields and 0 for number fields. Never use null or leave keys out.
+	  Numbers must be plain JSON numbers with no currency symbols, commas or quotes. "quantity" must be a whole number with no decimal point.
+	  Leave out markdowns and send pure json. Do not include your earlier 3 backticks with json too.
 
-      Spreadsheet cells:
-      ` + strings.Join(values, "\n"),
+	  Spreadsheet cells:
+	  ` + strings.Join(values, "\n"),
 		},
-	); err != nil {
-		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
-		return
+	) {
+		if err != nil {
+			log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
+			return
+		}
+		if ai_response != nil {
+			fmt.Println(ai_response.Text())
+		}
 	}
-	stringMessage := ai_response.Text()
+
 	type Materials struct {
 		ProductCode string  `json:"product_code"`
 		Date        string  `json:"date"`
@@ -1264,14 +1275,18 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		Total       float64 `json:"total"`
 		TotalIncGST bool    `json:"total_inc_gst"`
 	}
-	var response struct {
-		Materials []Materials `json:"materials"`
-	}
+	// var response struct {
+	// 	Materials []Materials `json:"materials"`
+	// }
 	log.Println(stringMessage)
 	log.Println("AI is done processing")
-	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
-		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
-		return
-	}
-	json.NewEncoder(w).Encode(response)
+	// if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
+	// 	log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
+	// 	return
+	// }
+	// json.NewEncoder(w).Encode(response)
+}
+
+func sliceMaterials(text string) {
+	fmt.Println("length: ", len(text))
 }
