@@ -1219,7 +1219,6 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Println("Sending")
-	go sliceMaterials(strings.Join(values, "\n"))
 	log.Println("Have sent")
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
@@ -1234,8 +1233,21 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	var ai_response *genai.GenerateContentResponse
-	var stringMessage strings.Builder
 	log.Println("AI is now processing message")
+	type Materials struct {
+		ProductCode string  `json:"product_code"`
+		Date        string  `json:"date"`
+		Supplier    string  `json:"supplier"`
+		Invoice     string  `json:"invoice"`
+		Quantity    int     `json:"quantity"`
+		Description string  `json:"description"`
+		UnitPrice   float64 `json:"unit_price"`
+		Total       float64 `json:"total"`
+		TotalIncGST bool    `json:"total_inc_gst"`
+	}
+	var response struct {
+		Materials []Materials `json:"materials"`
+	}
 	for ai_response, err = range chat.SendMessageStream( //sendmessagestream requires iter2, which follows for v := range seq
 		ctx,
 		genai.Part{
@@ -1260,33 +1272,16 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if ai_response != nil {
-			fmt.Println(ai_response.Text())
+			var stringMessage strings.Builder             //strings.Builder is a type to make strings dynamic, contrary to their immutable state
+			stringMessage.WriteString(ai_response.Text()) //writestring appends each piece inside () onto stringmessage
+			fmt.Println(stringMessage)
+			byteResp := []byte(stringMessage.String()) //turn into byte to be able to unmarshal into the response struct, .string outputs the final combined string all at once
+			if err := json.Unmarshal([]byte(byteResp), &response); err != nil {
+				log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
+				return
+			}
+			json.NewEncoder(w).Encode(response)
 		}
 	}
 
-	type Materials struct {
-		ProductCode string  `json:"product_code"`
-		Date        string  `json:"date"`
-		Supplier    string  `json:"supplier"`
-		Invoice     string  `json:"invoice"`
-		Quantity    int     `json:"quantity"`
-		Description string  `json:"description"`
-		UnitPrice   float64 `json:"unit_price"`
-		Total       float64 `json:"total"`
-		TotalIncGST bool    `json:"total_inc_gst"`
-	}
-	// var response struct {
-	// 	Materials []Materials `json:"materials"`
-	// }
-	log.Println(stringMessage)
-	log.Println("AI is done processing")
-	// if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
-	// 	log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
-	// 	return
-	// }
-	// json.NewEncoder(w).Encode(response)
-}
-
-func sliceMaterials(text string) {
-	fmt.Println("length: ", len(text))
 }
