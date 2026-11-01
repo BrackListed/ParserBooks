@@ -1234,6 +1234,29 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	}
 	var ai_response *genai.GenerateContentResponse
 	log.Println("AI is now processing message")
+	if ai_response, err = chat.SendMessage(
+		ctx,
+		genai.Part{
+			// Join the collected strings before concatenating because values is a []string.
+			Text: `Extract materials data from a spreadsheet. Return JSON only.
+      You are given the entire sheet, one non-empty cell per line, in the format "Row: r Col: c Value: v". Use the header row to identify which column holds each field, then read every data row beneath it.
+      Return exactly this shape and nothing else, with one object in "materials" for each data row:
+      {"materials":[{"product_code":"string","date":"string","supplier":"string","invoice":"string","quantity":integer,"description":"string","unit_price":number,"total":number,"total_inc_gst":bool}]}
+      Skip the header row, blank rows, and summary rows such as subtotals or grand totals.
+      "total_inc_gst" is true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false. Use the same value for every row.
+      Only fill a field from a column that clearly matches it in the header. Do NOT shift or guess — never borrow a value from a neighbouring column.
+      If a field is missing, use "" for string fields and 0 for number fields. Never use null or leave keys out.
+      Numbers must be plain JSON numbers with no currency symbols, commas or quotes. "quantity" must be a whole number with no decimal point.
+      Leave out markdowns and send pure json. Do not include your earlier 3 backticks with json too.
+
+      Spreadsheet cells:
+      ` + strings.Join(values, "\n"),
+		},
+	); err != nil {
+		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
+		return
+	}
+	stringMessage := ai_response.Text()
 	type Materials struct {
 		ProductCode string  `json:"product_code"`
 		Date        string  `json:"date"`
@@ -1248,40 +1271,11 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	var response struct {
 		Materials []Materials `json:"materials"`
 	}
-	for ai_response, err = range chat.SendMessageStream( //sendmessagestream requires iter2, which follows for v := range seq
-		ctx,
-		genai.Part{
-			// Join the collected strings before concatenating because values is a []string.
-			Text: `Extract materials data from a spreadsheet. Return JSON only.
-	  You are given the entire sheet, one non-empty cell per line, in the format "Row: r Col: c Value: v". Use the header row to identify which column holds each field, then read every data row beneath it.
-	  Return exactly this shape and nothing else, with one object in "materials" for each data row:
-	  {"materials":[{"product_code":"string","date":"string","supplier":"string","invoice":"string","quantity":number,"description":"string","unit_price":number,"total":number,"total_inc_gst":bool}]}
-	  Skip the header row, blank rows, and summary rows such as subtotals or grand totals.
-	  "total_inc_gst" is true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false. Use the same value for every row.
-	  Only fill a field from a column that clearly matches it in the header. Do NOT shift or guess — never borrow a value from a neighbouring column.
-	  If a field is missing, use "" for string fields and 0 for number fields. Never use null or leave keys out.
-	  Numbers must be plain JSON numbers with no currency symbols, commas or quotes. "quantity" must be a whole number with no decimal point.
-	  Leave out markdowns and send pure json. Do not include your earlier 3 backticks with json too.
-
-	  Spreadsheet cells:
-	  ` + strings.Join(values, "\n"),
-		},
-	) {
-		if err != nil {
-			log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
-			return
-		}
-		if ai_response != nil {
-			var stringMessage strings.Builder             //strings.Builder is a type to make strings dynamic, contrary to their immutable state
-			stringMessage.WriteString(ai_response.Text()) //writestring appends each piece inside () onto stringmessage
-			fmt.Println(stringMessage)
-			byteResp := []byte(stringMessage.String()) //turn into byte to be able to unmarshal into the response struct, .string outputs the final combined string all at once
-			if err := json.Unmarshal([]byte(byteResp), &response); err != nil {
-				log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
-				return
-			}
-			json.NewEncoder(w).Encode(response)
-		}
+	log.Println(stringMessage)
+	log.Println("AI is done processing")
+	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
+		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
+		return
 	}
-
+	json.NewEncoder(w).Encode(response)
 }
