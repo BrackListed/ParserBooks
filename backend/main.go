@@ -1209,12 +1209,18 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if len(strings.TrimSpace(cell.Value)) > 1 { //remove whitespace
-				e := fmt.Sprintf("Row: %d Col: %d Value: %s", row, col, strings.TrimSpace(cell.Value)) //fmt sprintf builds a formatted string, %d is placeholder for int values, %s is placeholder for string values
-				values = append(values, e)
+				e := fmt.Sprintf("Row: %d Col: %d Value: %s *", row, col, strings.TrimSpace(cell.Value)) //fmt sprintf builds a formatted string, %d is placeholder for int values, %s is placeholder for string values
+				before, _, _ := strings.Cut(e, "*")
+				values = append(values, before)
 			}
 		}
 	}
-	result := processMaterials(strings.Join(values, "\n"))
+	fmt.Println(values)
+	// for i := 0; i < 10; i++ {
+	// 	go processMaterials(strings.Join(values, "\n"))
+	// }
+	// result := go processMaterials(strings.Join(values, "\n"))
+	// json.NewEncoder(w).Encode(result)
 }
 
 type Materials struct {
