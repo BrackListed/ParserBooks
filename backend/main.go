@@ -1202,18 +1202,23 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	maxCol := sh.MaxCol
 	var values []string //declare a dynamic array
 	for row := 0; row <= maxRow; row++ {
+		var selectedRow []string //reset the row every new iteration
+		var finalRow string      //meant to hold the row alongside the asterisk separator
 		for col := 0; col <= maxCol; col++ {
 			cell, err := sh.Cell(row, col) //provided by xlsx, loop through the col before moving up the row, required to read cells
 			if err != nil {
 				log.Println("Error printing out cells: ", err.Error()) //sh.cell requires handling errors, so this is here
 				return
 			}
-			if len(strings.TrimSpace(cell.Value)) > 1 { //remove whitespace
-				e := fmt.Sprintf("Row: %d Col: %d Value: %s *", row, col, strings.TrimSpace(cell.Value)) //fmt sprintf builds a formatted string, %d is placeholder for int values, %s is placeholder for string values
-				before, _, _ := strings.Cut(e, "*")
-				values = append(values, before)
+			val := strings.TrimSpace(cell.Value)
+			if len(val) > 1 { //remove whitespace
+				cell := fmt.Sprintf("Row: %d Col: %d Value: %s", row, col, val) //fmt sprintf builds a formatted string, %d is placeholder for int values, %s is placeholder for string values
+				selectedRow = append(selectedRow, cell)                         //append one more time to take the row only
+				finalRow = strings.Join(selectedRow, " ") + "*"                 //add an asterisk to serve as the clear separator of the rows
 			}
 		}
+		values = append(values, finalRow) //the row officially moves up, but since we moved it to the row loop it appends by row, rather than by column
+
 	}
 	fmt.Println(values)
 	// for i := 0; i < 10; i++ {
