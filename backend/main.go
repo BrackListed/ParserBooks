@@ -1222,14 +1222,25 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 
 	}
 	fmt.Println(len(values))
+	length := len(values)
 	var wg sync.WaitGroup //apparently this is needed for goroutines to synchronize em
 	for i := 0; i < 10; i++ {
-		wg.Add(1)         //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
-		go func(id int) { //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
-			defer wg.Done()                                      //reduces the counter so 1 background task becomes 0
-			time.Sleep(time.Duration(id*150) * time.Millisecond) //space out the requests so they don't hit at the exact same timee
-			processMaterials(strings.Join(values, "\n"))
-		}(i)
+		increments := math.Round(float64(length) / 10)
+		for x := 0; x < length; x += int(increments) {
+			end := x + int(increments) //calculate the end so we have a basis for the chunk
+			if end > length {
+				end = length //if the end is greater than the length default the end to the length
+			}
+			chunk := values[x:end] //slice the chunk, from the x to the end
+			go func(id int) {      //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
+				defer wg.Done()                                      //reduces the counter so 1 background task becomes 0
+				time.Sleep(time.Duration(id*150) * time.Millisecond) //space out the requests so they don't hit at the exact same timee
+				fmt.Println(chunk)
+				// processMaterials(strings.Join(chunk, "\n"))
+			}(i)
+		}
+		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
+
 	}
 	wg.Wait()
 	json.NewEncoder(w).Encode(values)
