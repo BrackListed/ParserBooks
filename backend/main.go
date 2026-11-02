@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -1220,12 +1221,18 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		values = append(values, finalRow) //the row officially moves up, but since we moved it to the row loop it appends by row, rather than by column
 
 	}
-	fmt.Println(values)
-	// for i := 0; i < 10; i++ {
-	// 	go processMaterials(strings.Join(values, "\n"))
-	// }
-	// result := go processMaterials(strings.Join(values, "\n"))
-	// json.NewEncoder(w).Encode(result)
+	fmt.Println(len(values))
+	var wg sync.WaitGroup //apparently this is needed for goroutines to synchronize em
+	for i := 0; i < 10; i++ {
+		wg.Add(1)         //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
+		go func(id int) { //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
+			defer wg.Done()                                      //reduces the counter so 1 background task becomes 0
+			time.Sleep(time.Duration(id*150) * time.Millisecond) //space out the requests so they don't hit at the exact same timee
+			processMaterials(strings.Join(values, "\n"))
+		}(i)
+	}
+	wg.Wait()
+	json.NewEncoder(w).Encode(values)
 }
 
 type Materials struct {
