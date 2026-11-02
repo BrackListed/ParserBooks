@@ -1180,10 +1180,6 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	if err := godotenv.Load(); err != nil {
-		log.Println("ENV failed to load in Extract Materials: ", err.Error())
-	}
-	var apiKey = os.Getenv("GEMINI_API_KEY")
 	materials, _, err := r.FormFile("materials") //returns the filestream(project), header(metadata/information), and error
 	if err != nil {
 		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
@@ -1218,8 +1214,31 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	log.Println("Sending")
-	log.Println("Have sent")
+	result := processMaterials(strings.Join(values, "\n"))
+}
+
+type Materials struct {
+	ProductCode string  `json:"product_code"`
+	Date        string  `json:"date"`
+	Supplier    string  `json:"supplier"`
+	Invoice     string  `json:"invoice"`
+	Quantity    int     `json:"quantity"`
+	Description string  `json:"description"`
+	UnitPrice   float64 `json:"unit_price"`
+	Total       float64 `json:"total"`
+	TotalIncGST bool    `json:"total_inc_gst"`
+}
+type Response struct {
+	Materials []Materials `json:"materials"`
+}
+
+func processMaterials(text string) struct {
+	Materials []Materials "json:\"materials\""
+} {
+	if err := godotenv.Load(); err != nil {
+		log.Println("ENV failed to load in Extract Materials: ", err.Error())
+	}
+	var apiKey = os.Getenv("GEMINI_API_KEY")
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  apiKey,
@@ -1232,9 +1251,7 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var ai_response *genai.GenerateContentResponse
-	log.Println("AI is now processing message")
-	if ai_response, err = chat.SendMessage(
+	ai_response, err := chat.SendMessage(
 		ctx,
 		genai.Part{
 			// Join the collected strings before concatenating because values is a []string.
@@ -1250,11 +1267,14 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
       Leave out markdowns and send pure json. Do not include your earlier 3 backticks with json too.
 
       Spreadsheet cells:
-      ` + strings.Join(values, "\n"),
+      ` + text,
 		},
-	); err != nil {
+	)
+	if err != nil {
 		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
-		return
+		return struct {
+			Materials []Materials `json:"materials"`
+		}{}
 	}
 	stringMessage := ai_response.Text()
 	type Materials struct {
@@ -1268,14 +1288,12 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		Total       float64 `json:"total"`
 		TotalIncGST bool    `json:"total_inc_gst"`
 	}
-	var response struct {
-		Materials []Materials `json:"materials"`
-	}
-	log.Println(stringMessage)
+	var response Response
 	log.Println("AI is done processing")
 	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
 		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
-		return
+		return response
 	}
-	json.NewEncoder(w).Encode(response)
+
+	return response
 }
