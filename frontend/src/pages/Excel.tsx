@@ -250,19 +250,19 @@ export function Excel() {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Project Name</label>
-                        <Input placeholder="Unnamed Project" value={project?.project_name ?? ""} />
+                        <Input placeholder="Unnamed Project" value={project?.project_name ?? ""} onChange={(e) => setProject({ ...project!, project_name: e.target.value })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Client</label>
-                        <Input placeholder="Unnamed Client" value={project?.client ?? ""} />
+                        <Input placeholder="Unnamed Client" value={project?.client ?? ""} onChange={(e) => setProject({ ...project!, client: e.target.value })} />
                       </div>
                       <div className="flex flex-col gap-1.5 sm:col-span-2">
                         <label className="text-sm text-neutral-300">Address</label>
-                        <Input placeholder="No address" value={project?.address ?? ""} />
+                        <Input placeholder="No address" value={project?.address ?? ""} onChange={(e) => setProject({ ...project!, address: e.target.value })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Billing Type</label>
-                        <Select placeholder="Select billing type" selectedKey={project?.billing_type ?? null}>
+                        <Select placeholder="Select billing type" selectedKey={project?.billing_type ?? null} onSelectionChange={(key) => setProject({ ...project!, billing_type: key as string })}>
                           <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
@@ -278,19 +278,19 @@ export function Excel() {
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Contract Amount Ex GST</label>
-                        <Input type="number" placeholder="0" value={project?.contract_amount_ex_gst ?? ""} />
+                        <Input type="number" placeholder="0" value={project?.contract_amount_ex_gst ?? ""} onChange={(e) => setProject({ ...project!, contract_amount_ex_gst: Number(e.target.value) })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">GST</label>
-                        <Input type="number" placeholder="0" value={project?.gst ?? ""} />
+                        <Input type="number" placeholder="0" value={project?.gst ?? ""} onChange={(e) => setProject({ ...project!, gst: Number(e.target.value) })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Contract Amount Inc GST</label>
-                        <Input type="number" placeholder="0" value={project?.total_contract_price ?? ""} />
+                        <Input type="number" placeholder="0" value={project?.total_contract_price ?? ""} onChange={(e) => setProject({ ...project!, total_contract_price: Number(e.target.value) })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Initial Variation</label>
-                        <Input type="number" placeholder="0" value={project?.initial_variation ?? ""} />
+                        <Input type="number" placeholder="0" value={project?.initial_variation ?? ""} onChange={(e) => setProject({ ...project!, initial_variation: Number(e.target.value) })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Cost Incurred</label>
@@ -298,19 +298,19 @@ export function Excel() {
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Profit Margin</label>
-                        <Input type="number" placeholder="0" value={project?.profit_margin ?? ""} />
+                        <Input type="number" placeholder="0" value={project?.profit_margin ?? ""} onChange={(e) => setProject({ ...project!, profit_margin: Number(e.target.value) })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Profit</label>
-                        <Input type="number" placeholder="0" value={project?.net_profit ?? ""} />
+                        <Input type="number" placeholder="0" value={project?.net_profit ?? ""} onChange={(e) => setProject({ ...project!, net_profit: Number(e.target.value) })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Start Date</label>
-                        <Input type="date" className="[color-scheme:dark]" value={project?.start_date ?? ""} />
+                        <Input type="date" className="[color-scheme:dark]" value={project?.start_date ?? ""} onChange={(e) => setProject({ ...project!, start_date: e.target.value })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Target Completion Date</label>
-                        <Input type="date" className="[color-scheme:dark]" value={project?.target_completion_date ?? ""} />
+                        <Input type="date" className="[color-scheme:dark]" value={project?.target_completion_date ?? ""} onChange={(e) => setProject({ ...project!, target_completion_date: e.target.value })} />
                       </div>
                     </div>
                   </div>
