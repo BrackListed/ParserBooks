@@ -1240,7 +1240,7 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	length := len(values)
 	var wg sync.WaitGroup    //apparently this is needed for goroutines to synchronize em
 	var responses []Response //create a dynamic array containing items of the struct fitting Response
-	increments := math.Round(float64(length) / 10)
+	increments := math.Round(float64(length) / 15)
 	id := 0 //id variable meant to keep track of which goroutine it is
 	for x := 0; x < length; x += int(increments) {
 		id++                       //use to keep track, basically increments until the goroutine finishes so we know if we're on goroutine #1 or #2
@@ -1250,9 +1250,8 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		}
 		chunk := values[x:end] //slice the chunk, from the x to the end
 		go func(id int) {      //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
-			defer wg.Done()                                      //reduces the counter so 1 background task becomes 0
-			time.Sleep(time.Duration(id*150) * time.Millisecond) //space out the requests so they don't hit at the exact same timee
-			fmt.Println(chunk)
+			defer wg.Done()                                         //reduces the counter so 1 background task becomes 0
+			time.Sleep(time.Duration(id*150) * time.Millisecond)    //space out the requests so they don't hit at the exact same timee)
 			response := processMaterials(strings.Join(chunk, "\n")) //receive the return statement in the processMaterials
 			responses = append(responses, response)                 //append them in a collection of responses
 		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
