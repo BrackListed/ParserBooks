@@ -1173,6 +1173,21 @@ Structured spreadsheet text:
 	json.NewEncoder(w).Encode(response)
 }
 
+type Materials struct {
+	ProductCode string  `json:"product_code"`
+	Date        string  `json:"date"`
+	Supplier    string  `json:"supplier"`
+	Invoice     string  `json:"invoice"`
+	Quantity    int     `json:"quantity"`
+	Description string  `json:"description"`
+	UnitPrice   float64 `json:"unit_price"`
+	Total       float64 `json:"total"`
+	TotalIncGST bool    `json:"total_inc_gst"`
+}
+type Response struct {
+	Materials []Materials `json:"materials"`
+}
+
 func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -1223,7 +1238,8 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(len(values))
 	length := len(values)
-	var wg sync.WaitGroup //apparently this is needed for goroutines to synchronize em
+	var wg sync.WaitGroup    //apparently this is needed for goroutines to synchronize em
+	var responses []Response //create a dynamic array containing items of the struct fitting Response
 	for i := 0; i < 10; i++ {
 		increments := math.Round(float64(length) / 10)
 		for x := 0; x < length; x += int(increments) {
@@ -1236,29 +1252,15 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 				defer wg.Done()                                      //reduces the counter so 1 background task becomes 0
 				time.Sleep(time.Duration(id*150) * time.Millisecond) //space out the requests so they don't hit at the exact same timee
 				fmt.Println(chunk)
-				// processMaterials(strings.Join(chunk, "\n"))
+				response := processMaterials(strings.Join(chunk, "\n")) //receive the return statement in the processMaterials
+				responses = append(responses, response)                 //append them in a collection of responses
 			}(i)
 		}
 		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
 
 	}
 	wg.Wait()
-	json.NewEncoder(w).Encode(values)
-}
-
-type Materials struct {
-	ProductCode string  `json:"product_code"`
-	Date        string  `json:"date"`
-	Supplier    string  `json:"supplier"`
-	Invoice     string  `json:"invoice"`
-	Quantity    int     `json:"quantity"`
-	Description string  `json:"description"`
-	UnitPrice   float64 `json:"unit_price"`
-	Total       float64 `json:"total"`
-	TotalIncGST bool    `json:"total_inc_gst"`
-}
-type Response struct {
-	Materials []Materials `json:"materials"`
+	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
 }
 
 func processMaterials(text string) struct {
