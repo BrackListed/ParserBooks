@@ -1240,7 +1240,7 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	length := len(values)
 	var wg sync.WaitGroup    //apparently this is needed for goroutines to synchronize em
 	var responses []Response //create a dynamic array containing items of the struct fitting Response
-	increments := math.Round(float64(length) / 15)
+	increments := (length + 14) / 15
 	id := 0 //id variable meant to keep track of which goroutine it is
 	for x := 0; x < length; x += int(increments) {
 		id++                       //use to keep track, basically increments until the goroutine finishes so we know if we're on goroutine #1 or #2
