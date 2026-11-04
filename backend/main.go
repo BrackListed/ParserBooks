@@ -1196,6 +1196,7 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
+	log.Println("Material has hit the endpoint")
 	materials, _, err := r.FormFile("materials") //returns the filestream(project), header(metadata/information), and error
 	if err != nil {
 		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
@@ -1236,7 +1237,6 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		values = append(values, finalRow) //the row officially moves up, but since we moved it to the row loop it appends by row, rather than by column
 
 	}
-	fmt.Println(len(values))
 	length := len(values)
 	var wg sync.WaitGroup    //apparently this is needed for goroutines to synchronize em
 	var responses []Response //create a dynamic array containing items of the struct fitting Response
@@ -1250,10 +1250,10 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		}
 		chunk := values[x:end] //slice the chunk, from the x to the end
 		go func(id int) {      //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
-			defer wg.Done()                                         //reduces the counter so 1 background task becomes 0
-			time.Sleep(time.Duration(id*150) * time.Millisecond)    //space out the requests so they don't hit at the exact same timee)
-			response := processMaterials(strings.Join(chunk, "\n")) //receive the return statement in the processMaterials
-			responses = append(responses, response)                 //append them in a collection of responses
+			defer wg.Done()                                                      //reduces the counter so 1 background task becomes 0
+			time.Sleep(time.Duration(id*150) * time.Millisecond)                 //space out the requests so they don't hit at the exact same timee)
+			response := processMaterials(strings.Join(chunk, "\n"), values[0:5]) //receive the return statement in the processMaterials
+			responses = append(responses, response)                              //append them in a collection of responses
 		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
 		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
 	}
@@ -1261,7 +1261,7 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
 }
 
-func processMaterials(text string) struct {
+func processMaterials(text string, reference []string) struct {
 	Materials []Materials "json:\"materials\""
 } {
 	if err := godotenv.Load(); err != nil {
@@ -1292,13 +1292,15 @@ func processMaterials(text string) struct {
       "total_inc_gst" is true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false. Use the same value for every row.
       Only fill a field from a column that clearly matches it in the header. Do NOT shift or guess — never borrow a value from a neighbouring column.
       If a field is missing, use "" for string fields and 0 for number fields. Never use null or leave keys out.
-      Numbers must be plain JSON numbers with no currency symbols, commas or quotes. "quantity" must be a whole number with no decimal point.
+      Numbers must be plain JSON numbers with no currency symbols, commas or quotes. Use the reference rows as your reference
       Leave out markdowns and send pure json. Do not include your earlier 3 backticks with json too.
-
-      Spreadsheet cells:
-      ` + text,
+      Reference Rows:
+      ` + strings.Join(reference, "\n") +
+				`Spreadsheet Cells: ` +
+				text,
 		},
 	)
+	fmt.Println(text)
 	if err != nil {
 		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
 		return struct {
@@ -1311,14 +1313,13 @@ func processMaterials(text string) struct {
 		Date        string  `json:"date"`
 		Supplier    string  `json:"supplier"`
 		Invoice     string  `json:"invoice"`
-		Quantity    int     `json:"quantity"`
+		Quantity    float64 `json:"quantity"`
 		Description string  `json:"description"`
 		UnitPrice   float64 `json:"unit_price"`
 		Total       float64 `json:"total"`
 		TotalIncGST bool    `json:"total_inc_gst"`
 	}
 	var response Response
-	log.Println("AI is done processing")
 	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
 		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
 		return response
