@@ -1228,14 +1228,13 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			val := strings.TrimSpace(cell.Value)
-			if len(val) > 1 { //remove whitespace
+			if strings.TrimSpace(val) != "" { //remove whitespace
 				cell := fmt.Sprintf("Row: %d Col: %d Value: %s", row, col, val) //fmt sprintf builds a formatted string, %d is placeholder for int values, %s is placeholder for string values
 				selectedRow = append(selectedRow, cell)                         //append one more time to take the row only
 				finalRow = strings.Join(selectedRow, " ") + "*"                 //add an asterisk to serve as the clear separator of the rows
 			}
 		}
 		values = append(values, finalRow) //the row officially moves up, but since we moved it to the row loop it appends by row, rather than by column
-
 	}
 	length := len(values)
 	var wg sync.WaitGroup    //apparently this is needed for goroutines to synchronize em
@@ -1300,7 +1299,6 @@ func processMaterials(text string, reference []string) struct {
 				text,
 		},
 	)
-	fmt.Println(text)
 	if err != nil {
 		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
 		return struct {
