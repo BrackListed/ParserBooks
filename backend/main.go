@@ -1196,7 +1196,6 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	log.Println("Material has hit the endpoint")
 	materials, _, err := r.FormFile("materials") //returns the filestream(project), header(metadata/information), and error
 	if err != nil {
 		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
@@ -1322,6 +1321,5 @@ func processMaterials(text string, reference []string) struct {
 		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
 		return response
 	}
-
 	return response
 }

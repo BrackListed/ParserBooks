@@ -29,11 +29,13 @@ function FileUploadCard({
   description,
   file,
   onChange,
+  status,
 }: {
   title: string
   description: string
   file: File | null
   onChange: (file: File | null) => void
+  status?: React.ReactNode
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -49,10 +51,12 @@ function FileUploadCard({
         onChange={(e) => onChange(e.target.files?.[0] ?? null)}
       />
       <div className="mt-4 flex items-center gap-3">
-        <Button variant="outline" onClick={() => inputRef.current?.click()}>
-          <Upload className="size-4" />
-          Upload file
-        </Button>
+        {status ?? (
+          <Button variant="outline" onClick={() => inputRef.current?.click()}>
+            <Upload className="size-4" />
+            Upload file
+          </Button>
+        )}
         <span className="truncate text-sm text-neutral-500">
           {file ? file.name : "No file chosen"}
         </span>
@@ -97,7 +101,16 @@ export function Excel() {
   const [labourFile, setLabourFile] = useState<File | null>(null)
   const [variationFile, setVariationFile] = useState<File | null>(null)
   const [project, setProject] = useState<projectType | null>(null)
-
+  const [materials, setMaterials] = useState()
+  const [countdown, setCountdown] = useState(0)
+  const cooldown = countdown > 0 ? (
+    <div className="flex w-full flex-col gap-1.5">
+      <div className="h-2 w-full rounded-full bg-neutral-800">
+        <div className="h-2 rounded-full bg-sky-500" style={{ width: `${(countdown / 60) * 100}%` }} />
+      </div>
+      <span className="text-sm text-neutral-300">All 15 requests have been exhausted. Wait {countdown}s</span>
+    </div>
+  ) : null
   return (
     <div className="relative w-screen min-h-screen">
       <div className="absolute inset-0 -z-50">
@@ -175,6 +188,7 @@ export function Excel() {
                       setProjectDetailsFile(file)
                       if (file) analyzeProjectFile(file)
                     }}
+                    status={cooldown}
                   />
                   <FileUploadCard
                     title="Materials"
@@ -184,18 +198,28 @@ export function Excel() {
                       setMaterialsFile(file)
                       if(file) analyzeMaterialsFile(file)
                     }}
+                    status={
+                      materialsFile && !materials ? (
+                        <div className="flex w-full flex-col gap-1.5">
+                          <div className="h-2 w-full animate-pulse rounded-full bg-emerald-500" />
+                          <span className="text-sm text-neutral-300">Loading Materials...</span>
+                        </div>
+                      ) : cooldown
+                    }
                   />
                   <FileUploadCard
                     title="Labour"
                     description="Timesheets, hours, and labour details."
                     file={labourFile}
                     onChange={setLabourFile}
+                    status={cooldown}
                   />
                   <FileUploadCard
                     title="Variation"
                     description="Variation and change-order records."
                     file={variationFile}
                     onChange={setVariationFile}
+                    status={cooldown}
                   />
                 </div>
               </BentoGridItem>
@@ -498,7 +522,12 @@ export function Excel() {
   async function analyzeMaterialsFile(materials: File){
     const formData = new FormData()
     formData.append("materials", materials)
+    setMaterials(undefined)
     const result = await axios.post("http://localhost:8080/analyze/materials", formData)
     console.log(result.data)
+    setMaterials(result.data)
+    setCountdown(60)
+    const timer = setInterval(() => setCountdown((c) => c - 1), 1000)
+    setTimeout(() => clearInterval(timer), 60000)
   }
 }
