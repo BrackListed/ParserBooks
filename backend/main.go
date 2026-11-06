@@ -1236,8 +1236,8 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		values = append(values, finalRow) //the row officially moves up, but since we moved it to the row loop it appends by row, rather than by column
 	}
 	length := len(values)
-	var wg sync.WaitGroup    //apparently this is needed for goroutines to synchronize em
-	var responses []Response //create a dynamic array containing items of the struct fitting Response
+	var wg sync.WaitGroup     //apparently this is needed for goroutines to synchronize em
+	var responses []Materials //create a dynamic array containing items of the struct fitting Response
 	increments := (length + 14) / 15
 	id := 0 //id variable meant to keep track of which goroutine it is
 	for x := 0; x < length; x += int(increments) {
@@ -1251,11 +1251,12 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 			defer wg.Done()                                                      //reduces the counter so 1 background task becomes 0
 			time.Sleep(time.Duration(id*150) * time.Millisecond)                 //space out the requests so they don't hit at the exact same timee)
 			response := processMaterials(strings.Join(chunk, "\n"), values[0:5]) //receive the return statement in the processMaterials
-			responses = append(responses, response)                              //append them in a collection of responses
+			responses = append(responses, response.Materials...)                 //append them in a collection of responses
 		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
 		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
 	}
 	wg.Wait()
+
 	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
 }
 
