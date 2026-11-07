@@ -1183,6 +1183,7 @@ type Materials struct {
 	UnitPrice   float64 `json:"unit_price"`
 	Total       float64 `json:"total"`
 	TotalIncGST bool    `json:"total_inc_gst"`
+	Markup      float64 `json:"markup"`
 }
 type Response struct {
 	Materials []Materials `json:"materials"`
@@ -1196,6 +1197,7 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
+	log.Println("Processing materials")
 	materials, _, err := r.FormFile("materials") //returns the filestream(project), header(metadata/information), and error
 	if err != nil {
 		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
@@ -1248,19 +1250,19 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		}
 		chunk := values[x:end] //slice the chunk, from the x to the end
 		go func(id int) {      //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
-			defer wg.Done()                                                      //reduces the counter so 1 background task becomes 0
-			time.Sleep(time.Duration(id*150) * time.Millisecond)                 //space out the requests so they don't hit at the exact same timee)
-			response := processMaterials(strings.Join(chunk, "\n"), values[0:5]) //receive the return statement in the processMaterials
-			responses = append(responses, response.Materials...)                 //append them in a collection of responses
+			defer wg.Done()                                                                              //reduces the counter so 1 background task becomes 0
+			time.Sleep(time.Duration(id*150) * time.Millisecond)                                         //space out the requests so they don't hit at the exact same timee)
+			response := processMaterials(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:]) //receive the return statement in the processMaterials
+			responses = append(responses, response.Materials...)                                         //append them in a collection of responses
 		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
 		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
 	}
 	wg.Wait()
-
+	log.Print("Done processing all")
 	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
 }
 
-func processMaterials(text string, reference []string) struct {
+func processMaterials(text string, reference []string, endRows []string) struct {
 	Materials []Materials "json:\"materials\""
 } {
 	if err := godotenv.Load(); err != nil {
@@ -1286,9 +1288,10 @@ func processMaterials(text string, reference []string) struct {
 			Text: `Extract materials data from a spreadsheet. Return JSON only.
       You are given the entire sheet, one non-empty cell per line, in the format "Row: r Col: c Value: v". Use the header row to identify which column holds each field, then read every data row beneath it.
       Return exactly this shape and nothing else, with one object in "materials" for each data row:
-      {"materials":[{"product_code":"string","date":"string","supplier":"string","invoice":"string","quantity":integer,"description":"string","unit_price":number,"total":number,"total_inc_gst":bool}]}
+      {"materials":[{"product_code":"string","date":"string","supplier":"string","invoice":"string","quantity":integer,"description":"string","unit_price":number,"total":number,"total_inc_gst":bool,"markup":number}]}
       Skip the header row, blank rows, and summary rows such as subtotals or grand totals.
       "total_inc_gst" is true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false. Use the same value for every row.
+	  "markup" will either be found in the end rows or the reference rows sent alongside it. Apply that markup to every single item. Send the float or number like 35.99, omit the percentage
       Only fill a field from a column that clearly matches it in the header. Do NOT shift or guess — never borrow a value from a neighbouring column.
       If a field is missing, use "" for string fields and 0 for number fields. Never use null or leave keys out.
       Numbers must be plain JSON numbers with no currency symbols, commas or quotes. Use the reference rows as your reference
@@ -1296,7 +1299,9 @@ func processMaterials(text string, reference []string) struct {
       Reference Rows:
       ` + strings.Join(reference, "\n") +
 				`Spreadsheet Cells: ` +
-				text,
+				text +
+				`End Rows: ` +
+				strings.Join(endRows, "\n"),
 		},
 	)
 	if err != nil {
@@ -1306,17 +1311,6 @@ func processMaterials(text string, reference []string) struct {
 		}{}
 	}
 	stringMessage := ai_response.Text()
-	type Materials struct {
-		ProductCode string  `json:"product_code"`
-		Date        string  `json:"date"`
-		Supplier    string  `json:"supplier"`
-		Invoice     string  `json:"invoice"`
-		Quantity    float64 `json:"quantity"`
-		Description string  `json:"description"`
-		UnitPrice   float64 `json:"unit_price"`
-		Total       float64 `json:"total"`
-		TotalIncGST bool    `json:"total_inc_gst"`
-	}
 	var response Response
 	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
 		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
