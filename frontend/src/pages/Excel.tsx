@@ -120,19 +120,23 @@ export function Excel() {
   const [countdown, setCountdown] = useState(0)
   const [page, setPage] = useState(1)
   const totalPages = Math.max(1, Math.ceil(materials.length / 10))
-  const total_ex_gst = materials.reduce((sum, entry) => sum + (entry.total_inc_gst ? (Number(entry.unit_price) / 1.1) * Number(entry.quantity) : Number(entry.unit_price) * Number(entry.quantity)), 0)
+  const total_ex_gst = materials.reduce((sum, entry) => {
+    const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
+    const net_ex_gst = ex_gst * entry.quantity
+    return sum + net_ex_gst
+  }, 0)
   const total_inc_gst = materials.reduce((sum, entry) => {
-    const ex_gst = (entry.total_inc_gst ? (Number(entry.unit_price) / 1.1) : Number(entry.unit_price)) * Number(entry.quantity)
-    const gst = ex_gst * 0.10
-    const inc_gst = entry.total_inc_gst ? Number(entry.unit_price) * Number(entry.quantity) : ex_gst + gst
-    return sum + inc_gst
+    const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
+    const net_ex_gst = ex_gst * entry.quantity
+    const gst = net_ex_gst * 0.10
+    return sum + (net_ex_gst + gst)
   }, 0)
   const total_inc_gst_with_markup = materials.reduce((sum, entry) => {
-    const ex_gst = (entry.total_inc_gst ? (Number(entry.unit_price) / 1.1) : Number(entry.unit_price)) * Number(entry.quantity)
-    const gst = ex_gst * 0.10
-    const inc_gst = entry.total_inc_gst ? Number(entry.unit_price) * Number(entry.quantity) : ex_gst + gst
-    const inc_gst_with_markup = inc_gst * (1 + (Number(entry.markup) / 100))
-    return sum + inc_gst_with_markup
+    const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
+    const net_ex_gst = ex_gst * entry.quantity
+    const gst = net_ex_gst * 0.10
+    const inc_gst = net_ex_gst + gst
+    return sum + inc_gst * (1 + (entry.markup / 100))
   }, 0)
   const cooldown = countdown > 0 ? (
     <div className="flex w-full flex-col gap-1.5">
@@ -420,7 +424,7 @@ export function Excel() {
                           <TableCell>${(gst).toFixed(2)}</TableCell>
                           <TableCell>${(total_inc_gst).toFixed(2)}</TableCell>
                           <TableCell>{material.markup.toFixed(2)}%</TableCell>
-                          <TableCell>${(material.markup + total_inc_gst).toFixed(2)}</TableCell>
+                          <TableCell>${(total_inc_gst * (1 + (material.markup / 100))).toFixed(2)}</TableCell>
                         </TableRow>)})}
                       </TableBody>
                     </Table>
