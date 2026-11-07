@@ -1253,7 +1253,7 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 			defer wg.Done()                                                                              //reduces the counter so 1 background task becomes 0
 			time.Sleep(time.Duration(id*150) * time.Millisecond)                                         //space out the requests so they don't hit at the exact same timee)
 			response := processMaterials(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:]) //receive the return statement in the processMaterials
-			responses = append(responses, response.Materials...)                                         //append them in a collection of responses
+			responses = append(responses, response.Materials...)                                         //append them in a collection of responses, spread operator to go inside the responses just like in js
 		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
 		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
 	}

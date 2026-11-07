@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { FileSpreadsheet, CheckCircle2, Upload, X } from "lucide-react"
+import { FileSpreadsheet, CheckCircle2, Upload, X, Loader2 } from "lucide-react"
 
 import DotGrid from "@/assets/DotGrid"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -20,6 +20,8 @@ import {
   TableHeader,
   TableHead,
   TableBody,
+  TableRow,
+  TableCell,
   TableCaption,
 } from "@/components/ui/table"
 import axios from "axios"
@@ -92,17 +94,32 @@ interface projectType{
   target_completion_date: string
   total_contract_price: number
 }
+
+interface materialType{
+  date: string
+  description: string
+  invoice: string
+  markup: number
+  product_code: string
+  quantity: number
+  supplier: string
+  total: number
+  total_inc_gst: boolean
+  unit_price: number
+}
+
 export function Excel() {
   const [previewTab, setPreviewTab] = useState<"project" | "materials" | "labour" | "variation">("project")
   const [variationTab, setVariationTab] = useState<"summary" | "materials" | "labour">("summary")
-
   const [projectDetailsFile, setProjectDetailsFile] = useState<File | null>(null)
   const [materialsFile, setMaterialsFile] = useState<File | null>(null)
   const [labourFile, setLabourFile] = useState<File | null>(null)
   const [variationFile, setVariationFile] = useState<File | null>(null)
   const [project, setProject] = useState<projectType | null>(null)
-  const [materials, setMaterials] = useState()
+  const [materials, setMaterials] = useState<materialType[]>([])
   const [countdown, setCountdown] = useState(0)
+  const [page, setPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(materials.length / 10))
   const cooldown = countdown > 0 ? (
     <div className="flex w-full flex-col gap-1.5">
       <div className="h-2 w-full rounded-full bg-neutral-800">
@@ -199,10 +216,10 @@ export function Excel() {
                       if(file) analyzeMaterialsFile(file)
                     }}
                     status={
-                      materialsFile && !materials ? (
-                        <div className="flex w-full flex-col gap-1.5">
-                          <div className="h-2 w-full animate-pulse rounded-full bg-emerald-500" />
-                          <span className="text-sm text-neutral-300">Loading Materials...</span>
+                      materialsFile && materials.length === 0 ? (
+                        <div className="flex items-center gap-2 text-sm text-neutral-300">
+                          <Loader2 className="size-4 animate-spin text-sky-400" />
+                          Loading Materials...
                         </div>
                       ) : cooldown
                     }
@@ -372,8 +389,46 @@ export function Excel() {
                         <TableHead>Total With Markup</TableHead>
                       </TableHeader>
                       <TableBody>
+                        {materials.slice((page - 1) * 10, page * 10).map((material) => {
+                          const ex_gst = material.total_inc_gst ? (material.unit_price * 0.90) : material.unit_price
+                          const net_ex_gst = ex_gst * material.quantity
+                          const gst = net_ex_gst * 0.10
+                          const total_inc_gst = net_ex_gst + gst
+                          return(<TableRow>
+                          <TableCell>{material.date}</TableCell>
+                          <TableCell>{material.product_code}</TableCell>
+                          <TableCell>{material.supplier}</TableCell>
+                          <TableCell>{material.invoice}</TableCell>
+                          <TableCell>{material.description}</TableCell>
+                          <TableCell>{material.quantity}</TableCell>
+                          <TableCell>${ex_gst.toFixed(2)}</TableCell>
+                          <TableCell>${net_ex_gst.toFixed(2)}</TableCell>
+                          <TableCell>${(gst).toFixed(2)}</TableCell>
+                          <TableCell>${(total_inc_gst).toFixed(2)}</TableCell>
+                          <TableCell>{material.markup.toFixed(2)}%</TableCell>
+                          <TableCell>${(material.markup + total_inc_gst).toFixed(2)}</TableCell>
+                        </TableRow>)})}
                       </TableBody>
                     </Table>
+                    {materials.length > 10 && (
+                      <div className="flex items-center justify-end gap-2 text-sm text-neutral-300">
+                        <Button size="sm" variant="outline" isDisabled={page === 1} onClick={() => setPage(page - 1)}>
+                          Prev
+                        </Button>
+                        <Input
+                          type="number"
+                          className="w-16 text-center"
+                          min={1}
+                          max={totalPages}
+                          value={page}
+                          onChange={(e) => setPage(Math.min(totalPages, Math.max(1, Number(e.target.value))))}
+                        />
+                        <span>of {totalPages}</span>
+                        <Button size="sm" variant="outline" isDisabled={page === totalPages} onClick={() => setPage(page + 1)}>
+                          Next
+                        </Button>
+                      </div>
+                    )}
                     <TableCaption>No materials loaded from a spreadsheet yet.</TableCaption>
                   </>
                 )}
@@ -397,6 +452,15 @@ export function Excel() {
                         <TableHead>Notes</TableHead>
                       </TableHeader>
                       <TableBody>
+                        <TableRow>
+                          <TableCell>01/01/2026</TableCell>
+                          <TableCell>Worker Name</TableCell>
+                          <TableCell>$0.00</TableCell>
+                          <TableCell>0</TableCell>
+                          <TableCell>$0.00</TableCell>
+                          <TableCell>Type</TableCell>
+                          <TableCell>Notes</TableCell>
+                        </TableRow>
                       </TableBody>
                     </Table>
                     <TableCaption>No labour loaded from a spreadsheet yet.</TableCaption>
@@ -469,6 +533,16 @@ export function Excel() {
                             <TableHead>Total</TableHead>
                           </TableHeader>
                           <TableBody>
+                            <TableRow>
+                              <TableCell>01/01/2026</TableCell>
+                              <TableCell>PC-001</TableCell>
+                              <TableCell>Supplier Name</TableCell>
+                              <TableCell>Description</TableCell>
+                              <TableCell>1</TableCell>
+                              <TableCell>$0.00</TableCell>
+                              <TableCell>$0.00</TableCell>
+                              <TableCell>$0.00</TableCell>
+                            </TableRow>
                           </TableBody>
                         </Table>
                         <TableCaption>No materials loaded for this variation yet.</TableCaption>
@@ -487,6 +561,14 @@ export function Excel() {
                             <TableHead>Notes</TableHead>
                           </TableHeader>
                           <TableBody>
+                            <TableRow>
+                              <TableCell>01/01/2026</TableCell>
+                              <TableCell>Worker Name</TableCell>
+                              <TableCell>$0.00</TableCell>
+                              <TableCell>0</TableCell>
+                              <TableCell>$0.00</TableCell>
+                              <TableCell>Notes</TableCell>
+                            </TableRow>
                           </TableBody>
                         </Table>
                         <TableCaption>No labour loaded for this variation yet.</TableCaption>
@@ -522,7 +604,8 @@ export function Excel() {
   async function analyzeMaterialsFile(materials: File){
     const formData = new FormData()
     formData.append("materials", materials)
-    setMaterials(undefined)
+    setMaterials([])
+    setPage(1)
     const result = await axios.post("http://localhost:8080/analyze/materials", formData)
     console.log(result.data)
     setMaterials(result.data)
