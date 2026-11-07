@@ -120,6 +120,20 @@ export function Excel() {
   const [countdown, setCountdown] = useState(0)
   const [page, setPage] = useState(1)
   const totalPages = Math.max(1, Math.ceil(materials.length / 10))
+  const total_ex_gst = materials.reduce((sum, entry) => sum + (entry.total_inc_gst ? (Number(entry.unit_price) / 1.1) * Number(entry.quantity) : Number(entry.unit_price) * Number(entry.quantity)), 0)
+  const total_inc_gst = materials.reduce((sum, entry) => {
+    const ex_gst = (entry.total_inc_gst ? (Number(entry.unit_price) / 1.1) : Number(entry.unit_price)) * Number(entry.quantity)
+    const gst = ex_gst * 0.10
+    const inc_gst = entry.total_inc_gst ? Number(entry.unit_price) * Number(entry.quantity) : ex_gst + gst
+    return sum + inc_gst
+  }, 0)
+  const total_inc_gst_with_markup = materials.reduce((sum, entry) => {
+    const ex_gst = (entry.total_inc_gst ? (Number(entry.unit_price) / 1.1) : Number(entry.unit_price)) * Number(entry.quantity)
+    const gst = ex_gst * 0.10
+    const inc_gst = entry.total_inc_gst ? Number(entry.unit_price) * Number(entry.quantity) : ex_gst + gst
+    const inc_gst_with_markup = inc_gst * (1 + (Number(entry.markup) / 100))
+    return sum + inc_gst_with_markup
+  }, 0)
   const cooldown = countdown > 0 ? (
     <div className="flex w-full flex-col gap-1.5">
       <div className="h-2 w-full rounded-full bg-neutral-800">
@@ -362,15 +376,15 @@ export function Excel() {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div className="rounded-lg border border-sidebar-border px-4 py-3">
                         <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total Ex GST</p>
-                        <p className="mt-1 text-xl font-semibold text-neutral-100">$0.00</p>
+                        <p className="mt-1 text-xl font-semibold text-neutral-100">${total_ex_gst.toFixed(2)}</p>
                       </div>
                       <div className="rounded-lg border border-sidebar-border px-4 py-3">
                         <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total Inc GST</p>
-                        <p className="mt-1 text-xl font-semibold text-neutral-100">$0.00</p>
+                        <p className="mt-1 text-xl font-semibold text-neutral-100">${total_inc_gst.toFixed(2)}</p>
                       </div>
                       <div className="rounded-lg border border-sidebar-border px-4 py-3">
                         <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total Inc GST With Markup</p>
-                        <p className="mt-1 text-xl font-semibold text-neutral-100">$0.00</p>
+                        <p className="mt-1 text-xl font-semibold text-neutral-100">${total_inc_gst_with_markup.toFixed(2)}</p>
                       </div>
                     </div>
                     <Table>
