@@ -390,7 +390,7 @@ export function Excel() {
                       </TableHeader>
                       <TableBody>
                         {materials.slice((page - 1) * 10, page * 10).map((material) => {
-                          const ex_gst = material.total_inc_gst ? (material.unit_price * 0.90) : material.unit_price
+                          const ex_gst = material.total_inc_gst ? (material.unit_price / 1.10) : material.unit_price //a material with gst is 100% or 1 (base) + 10% or 0.1(gst). Dividing by 1.10 reverts it back to the base value. 1.1/1.1 = 1
                           const net_ex_gst = ex_gst * material.quantity
                           const gst = net_ex_gst * 0.10
                           const total_inc_gst = net_ex_gst + gst
