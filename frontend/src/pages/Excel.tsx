@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { FileSpreadsheet, CheckCircle2, Upload, X, Loader2 } from "lucide-react"
 
 import DotGrid from "@/assets/DotGrid"
@@ -146,6 +146,9 @@ export function Excel() {
       <span className="text-sm text-neutral-300">All 15 requests have been exhausted. Wait {countdown}s</span>
     </div>
   ) : null
+  useEffect(() => {
+    console.log(materials.filter((entry) => !entry.total_inc_gst))
+  }, [materials])
   return (
     <div className="relative w-screen min-h-screen">
       <div className="absolute inset-0 -z-50">

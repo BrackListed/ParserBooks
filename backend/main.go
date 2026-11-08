@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -223,13 +222,13 @@ func addExpensesEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	var ex_gst, inc_gst, gst float64
 	if body.GstType == "Ex GST" {
-		ex_gst = math.Round(body.Amount*100) / 100
-		gst = math.Round((body.Amount*0.1)*100) / 100
-		inc_gst = math.Round((ex_gst+gst)*100) / 100
+		ex_gst = body.Amount
+		gst = body.Amount * 0.1
+		inc_gst = ex_gst + gst
 	} else {
-		inc_gst = math.Round(body.Amount*100) / 100
-		ex_gst = math.Round((body.Amount/1.1)*100) / 100
-		gst = math.Round((inc_gst-ex_gst)*100) / 100
+		inc_gst = body.Amount
+		ex_gst = body.Amount / 1.1
+		gst = inc_gst - ex_gst
 	}
 	_, err := db.Exec(r.Context(), "INSERT INTO expenses(user_id, date, project, category, supplier, description, gst_type, ex_gst, inc_gst, gst) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", "ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", body.Date, body.Project, body.Category, body.Supplier, body.Description, body.GstType, ex_gst, inc_gst, gst)
 	if err != nil {
@@ -1285,23 +1284,35 @@ func processMaterials(text string, reference []string, endRows []string) struct 
 		ctx,
 		genai.Part{
 			// Join the collected strings before concatenating because values is a []string.
-			Text: `Extract materials data from a spreadsheet. Return JSON only.
-      You are given the entire sheet, one non-empty cell per line, in the format "Row: r Col: c Value: v". Use the header row to identify which column holds each field, then read every data row beneath it.
-      Return exactly this shape and nothing else, with one object in "materials" for each data row:
-      {"materials":[{"product_code":"string","date":"string","supplier":"string","invoice":"string","quantity":integer,"description":"string","unit_price":number,"total":number,"total_inc_gst":bool,"markup":number}]}
-      Skip the header row, blank rows, and summary rows such as subtotals or grand totals.
-      "total_inc_gst" is true if the total column header says the total includes GST (e.g. "Total Inc GST"), else false. Use the same value for every row.
-	  "markup" will either be found in the end rows or the reference rows sent alongside it. Apply that markup to every single item. Send the float or number like 35.99, omit the percentage
-      Only fill a field from a column that clearly matches it in the header. Do NOT shift or guess — never borrow a value from a neighbouring column.
-      If a field is missing, use "" for string fields and 0 for number fields. Never use null or leave keys out.
-      Numbers must be plain JSON numbers with no currency symbols, commas or quotes. Use the reference rows as your reference
-      Leave out markdowns and send pure json. Do not include your earlier 3 backticks with json too.
-      Reference Rows:
-      ` + strings.Join(reference, "\n") +
-				`Spreadsheet Cells: ` +
-				text +
-				`End Rows: ` +
-				strings.Join(endRows, "\n"),
+			Text: `Extract materials data from a spreadsheet and return it as raw JSON.
+
+INPUT:
+- "Spreadsheet Cells": the line items to extract, one non-empty cell per line in the format "Row: r Col: c Value: v".
+- "Reference Rows" and "End Rows": context only. Never turn these into entries in the "materials" array.
+
+RULES:
+1. Use the header row in "Spreadsheet Cells" to work out which column holds each field.
+2. Output exactly one object in "materials" for every data row in "Spreadsheet Cells".
+3. Skip header rows, blank rows, and summary rows (subtotals, totals, grand totals).
+4. Read "markup" from "Reference Rows" or "End Rows". It is a single overall percentage; apply the same value to every item as a plain number (e.g. 35 or 35.99), without the % sign.
+5. "total_inc_gst" is true if the total column header says it includes GST (e.g. "Total Inc GST"), otherwise false. Use the same value for every item.
+6. Only fill a field from the column whose header clearly matches it. Never shift, guess, or borrow values from neighbouring columns.
+7. If a field is missing, use "" for strings and 0 for numbers. Never output null and never leave out a key.
+8. Numbers must be plain JSON numbers: no currency symbols, commas, or quotes.
+
+OUTPUT FORMAT (return exactly this shape and nothing else):
+{"materials":[{"product_code":"string","date":"string","supplier":"string","invoice":"string","quantity":integer,"description":"string","unit_price":number,"total":number,"total_inc_gst":bool,"markup":number}]}
+
+Do not wrap the output in Markdown code fences (no ` + "```json" + `). Return raw JSON only.
+
+Reference Rows:
+` + strings.Join(reference, "\n") + `
+
+End Rows:
+` + strings.Join(endRows, "\n") + `
+
+Spreadsheet Cells:
+` + text,
 		},
 	)
 	if err != nil {
