@@ -1185,8 +1185,22 @@ type Materials struct {
 	TotalIncGST bool    `json:"total_inc_gst"`
 	Markup      float64 `json:"markup"`
 }
-type Response struct {
+type MaterialsResponse struct {
 	Materials []Materials `json:"materials"`
+}
+
+type LabourResponse struct {
+	Labour []Labour `json:"labour"`
+}
+
+type Labour struct {
+	Date   string  `json:"date"`
+	Worker string  `json:"worker"`
+	Rate   float64 `json:"rate"`
+	Hours  float64 `json:"hours"`
+	Total  float64 `json:"total"`
+	Type   string  `json:"type"`
+	Notes  string  `json:"notes"`
 }
 
 func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
@@ -1311,8 +1325,8 @@ func analyzeLabour(w http.ResponseWriter, r *http.Request) {
 		values = append(values, finalRow) //the row officially moves up, but since we moved it to the row loop it appends by row, rather than by column
 	}
 	length := len(values)
-	var wg sync.WaitGroup     //apparently this is needed for goroutines to synchronize em
-	var responses []Materials //create a dynamic array containing items of the struct fitting Response
+	var wg sync.WaitGroup  //apparently this is needed for goroutines to synchronize em
+	var responses []Labour //create a dynamic array containing items of the struct fitting Response
 	increments := (length + 14) / 15
 	id := 0 //id variable meant to keep track of which goroutine it is
 	for x := 0; x < length; x += int(increments) {
@@ -1322,18 +1336,93 @@ func analyzeLabour(w http.ResponseWriter, r *http.Request) {
 			end = length //if the end is greater than the length default the end to the length
 		}
 		chunk := values[x:end] //slice the chunk, from the x to the end
-		fmt.Println(chunk)
-		go func(id int) { //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
-			defer wg.Done()                                      //reduces the counter so 1 background task becomes 0
-			time.Sleep(time.Duration(id*150) * time.Millisecond) //space out the requests so they don't hit at the exact same timee)
-			// response := processLabour(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:]) //receive the return statement in the processMaterials
-			// responses = append(responses, response.Materials...)                                         //append them in a collection of responses, spread operator to go inside the responses just like in js
+		go func(id int) {      //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
+			defer wg.Done()                                                                           //reduces the counter so 1 background task becomes 0
+			time.Sleep(time.Duration(id*150) * time.Millisecond)                                      //space out the requests so they don't hit at the exact same timee)
+			response := processLabour(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:]) //receive the return statement in the processMaterials
+			responses = append(responses, response.Labour...)                                         //append them in a collection of responses, spread operator to go inside the responses just like in js
 		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
 		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
 	}
 	wg.Wait()
 	log.Print("Done processing all")
 	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
+}
+
+func processLabour(text string, reference []string, endRows []string) struct {
+	Labour []Labour "json:\"labour\""
+} {
+	if err := godotenv.Load(); err != nil {
+		log.Println("ENV failed to load in Extract Materials: ", err.Error())
+	}
+	var apiKey = os.Getenv("GEMINI_API_KEY")
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	chat, err := client.Chats.Create(ctx, "gemini-3.5-flash-lite", nil, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ai_response, err := chat.SendMessage(
+		ctx,
+		genai.Part{
+			// Join the collected strings before concatenating because values is a []string.
+			Text: `Extract labour data from a spreadsheet and return it as raw JSON.
+
+INPUT:
+- "Spreadsheet Cells": the line items to extract, one non-empty cell per line in the format "Row: r Col: c Value: v". Column numbers start from 0.
+- "Reference Rows" and "End Rows": context only. Never turn these into entries in the "labour" array.
+
+FIELDS:
+- date: the date the work was done
+- worker: the person or category doing the work (e.g. "Khoa", "DCP", "Angus"); the header may say "Worker" or "Category"
+- rate: cost per hour
+- hours: number of hours worked
+- total: the line total for that row
+- type: the kind of labour if a column states it (e.g. "Normal", "Overtime")
+- notes: any notes or comments for that row
+
+RULES:
+1. Use the header row in "Spreadsheet Cells" to work out which column holds each field.
+2. Output exactly one object in "labour" for every data row in "Spreadsheet Cells".
+3. Skip header rows, blank rows, and summary rows (subtotals, totals, grand totals).
+4. Only fill a field from the column whose header clearly matches it. Never shift, guess, or borrow values from neighbouring columns.
+5. If a field has no matching column or is empty, use "" for strings and 0 for numbers. Never output null and never leave out a key.
+6. Numbers must be plain JSON numbers: no currency symbols, commas, or quotes.
+
+OUTPUT FORMAT (return exactly this shape and nothing else):
+{"labour":[{"date":"string","worker":"string","rate":number,"hours":number,"total":number,"type":"string","notes":"string"}]}
+
+Do not wrap the output in Markdown code fences (no ` + "```json" + `). Return raw JSON only.
+
+Reference Rows:
+` + strings.Join(reference, "\n") + `
+
+End Rows:
+` + strings.Join(endRows, "\n") + `
+
+Spreadsheet Cells:
+` + text,
+		},
+	)
+	if err != nil {
+		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
+		return struct {
+			Labour []Labour `json:"labour"`
+		}{}
+	}
+	stringMessage := ai_response.Text()
+	var response LabourResponse
+	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
+		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
+		return response
+	}
+	return response
 }
 
 func processMaterials(text string, reference []string, endRows []string) struct {
@@ -1397,7 +1486,7 @@ Spreadsheet Cells:
 		}{}
 	}
 	stringMessage := ai_response.Text()
-	var response Response
+	var response MaterialsResponse
 	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
 		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
 		return response
