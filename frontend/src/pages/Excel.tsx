@@ -133,6 +133,8 @@ export function Excel() {
   const filteredMaterials = materials.filter((material) => material.description.toLowerCase().includes(search.toLowerCase()))
   const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / 10))
   const [labour, setLabour] = useState<labourType[]>([])
+  const [labourPage, setLabourPage] = useState(1)
+  const labourTotalPages = Math.max(1, Math.ceil(labour.length / 10))
   const total_ex_gst = materials.reduce((sum, entry) => {
     const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
     const net_ex_gst = ex_gst * entry.quantity
@@ -437,17 +439,17 @@ export function Excel() {
                           const gst = net_ex_gst * 0.10
                           const total_inc_gst = net_ex_gst + gst
                           return(<TableRow>
-                          <TableCell>{material.date}</TableCell>
-                          <TableCell>{material.product_code}</TableCell>
-                          <TableCell>{material.supplier}</TableCell>
-                          <TableCell>{material.invoice}</TableCell>
-                          <TableCell>{material.description}</TableCell>
-                          <TableCell>{material.quantity}</TableCell>
+                          <TableCell><Input type="date" className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0 [color-scheme:dark]" value={material.date} onChange={(e) => setMaterials(materials.map((m) => m === material ? { ...m, date: e.target.value } : m))} /></TableCell>
+                          <TableCell><Input className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0" value={material.product_code} onChange={(e) => setMaterials(materials.map((m) => m === material ? { ...m, product_code: e.target.value } : m))} /></TableCell>
+                          <TableCell><Input className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0" value={material.supplier} onChange={(e) => setMaterials(materials.map((m) => m === material ? { ...m, supplier: e.target.value } : m))} /></TableCell>
+                          <TableCell><Input className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0" value={material.invoice} onChange={(e) => setMaterials(materials.map((m) => m === material ? { ...m, invoice: e.target.value } : m))} /></TableCell>
+                          <TableCell><Input className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0" value={material.description} onChange={(e) => setMaterials(materials.map((m) => m === material ? { ...m, description: e.target.value } : m))} /></TableCell>
+                          <TableCell><Input type="number" className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" value={material.quantity} onChange={(e) => setMaterials(materials.map((m) => m === material ? { ...m, quantity: Number(e.target.value) } : m))} /></TableCell>
                           <TableCell>${ex_gst.toFixed(2)}</TableCell>
                           <TableCell>${net_ex_gst.toFixed(2)}</TableCell>
                           <TableCell>${(gst).toFixed(2)}</TableCell>
                           <TableCell>${(total_inc_gst).toFixed(2)}</TableCell>
-                          <TableCell>{material.markup.toFixed(2)}%</TableCell>
+                          <TableCell><div className="flex items-center"><Input type="number" className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" value={material.markup} onChange={(e) => setMaterials(materials.map((m) => m === material ? { ...m, markup: Number(e.target.value) } : m))} />%</div></TableCell>
                           <TableCell>${(total_inc_gst * (1 + (material.markup / 100))).toFixed(2)}</TableCell>
                         </TableRow>)})}
                       </TableBody>
@@ -494,17 +496,48 @@ export function Excel() {
                         <TableHead>Notes</TableHead>
                       </TableHeader>
                       <TableBody>
-                        {labour.map((item) => (<TableRow>
-                          <TableCell>{item.date}</TableCell>
-                          <TableCell>{item.worker}</TableCell>
-                          <TableCell>${item.rate}</TableCell>
-                          <TableCell>{item.hours}</TableCell>
-                          <TableCell>${item.total}</TableCell>
-                          <TableCell>{item.type}</TableCell>
-                          <TableCell>{item.notes}</TableCell>
+                        {labour.slice((labourPage - 1) * 10, labourPage * 10).map((item) => (<TableRow>
+                          <TableCell><Input type="date" className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0 [color-scheme:dark]" value={item.date} onChange={(e) => setLabour(labour.map((l) => l === item ? { ...l, date: e.target.value } : l))} /></TableCell>
+                          <TableCell><Input className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0" value={item.worker} onChange={(e) => setLabour(labour.map((l) => l === item ? { ...l, worker: e.target.value } : l))} /></TableCell>
+                          <TableCell><div className="flex items-center">$<Input type="number" className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" value={item.rate} onChange={(e) => setLabour(labour.map((l) => l === item ? { ...l, rate: Number(e.target.value) } : l))} /></div></TableCell>
+                          <TableCell><Input type="number" className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" value={item.hours} onChange={(e) => setLabour(labour.map((l) => l === item ? { ...l, hours: Number(e.target.value) } : l))} /></TableCell>
+                          <TableCell><div className="flex items-center">$<Input type="number" className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" value={item.total} onChange={(e) => setLabour(labour.map((l) => l === item ? { ...l, total: Number(e.target.value) } : l))} /></div></TableCell>
+                          <TableCell>
+                            <Select selectedKey={item.type} onSelectionChange={(key) => setLabour(labour.map((l) => l === item ? { ...l, type: key as string } : l))}>
+                              <SelectTrigger className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0 gap-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectGroup>
+                                  <SelectItem id="Normal">Normal</SelectItem>
+                                  <SelectItem id="Overtime">Overtime</SelectItem>
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell><Input className="h-auto border-0 bg-transparent p-0 dark:bg-transparent focus-visible:ring-0" value={item.notes} onChange={(e) => setLabour(labour.map((l) => l === item ? { ...l, notes: e.target.value } : l))} /></TableCell>
                         </TableRow>))}
                       </TableBody>
                     </Table>
+                    {labour.length > 10 && (
+                      <div className="flex items-center justify-end gap-2 text-sm text-neutral-300">
+                        <Button size="sm" variant="outline" isDisabled={labourPage === 1} onClick={() => setLabourPage(labourPage - 1)}>
+                          Prev
+                        </Button>
+                        <Input
+                          type="number"
+                          className="w-16 text-center"
+                          min={1}
+                          max={labourTotalPages}
+                          value={labourPage}
+                          onChange={(e) => setLabourPage(Math.min(labourTotalPages, Math.max(1, Number(e.target.value))))}
+                        />
+                        <span>of {labourTotalPages}</span>
+                        <Button size="sm" variant="outline" isDisabled={labourPage === labourTotalPages} onClick={() => setLabourPage(labourPage + 1)}>
+                          Next
+                        </Button>
+                      </div>
+                    )}
                     <TableCaption>No labour loaded from a spreadsheet yet.</TableCaption>
                   </>
                 )}
@@ -660,5 +693,6 @@ export function Excel() {
     formData.append("labour", labour)
     const result = await axios.post("http://localhost:8080/analyze/labour", formData)
     setLabour(result.data)
+    setLabourPage(1)
   }
 }
