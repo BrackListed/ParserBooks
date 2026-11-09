@@ -108,6 +108,16 @@ interface materialType{
   unit_price: number
 }
 
+interface labourType{
+  date: string
+  worker: string
+  rate: number
+  hours: number
+  total: number
+  type: string
+  notes: string
+}
+
 export function Excel() {
   const [previewTab, setPreviewTab] = useState<"project" | "materials" | "labour" | "variation">("project")
   const [variationTab, setVariationTab] = useState<"summary" | "materials" | "labour">("summary")
@@ -122,6 +132,7 @@ export function Excel() {
   const [search, setSearch] = useState("")
   const filteredMaterials = materials.filter((material) => material.description.toLowerCase().includes(search.toLowerCase()))
   const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / 10))
+  const [labour, setLabour] = useState<labourType[]>([])
   const total_ex_gst = materials.reduce((sum, entry) => {
     const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
     const net_ex_gst = ex_gst * entry.quantity
@@ -483,15 +494,15 @@ export function Excel() {
                         <TableHead>Notes</TableHead>
                       </TableHeader>
                       <TableBody>
-                        <TableRow>
-                          <TableCell>01/01/2026</TableCell>
-                          <TableCell>Worker Name</TableCell>
-                          <TableCell>$0.00</TableCell>
-                          <TableCell>0</TableCell>
-                          <TableCell>$0.00</TableCell>
-                          <TableCell>Type</TableCell>
-                          <TableCell>Notes</TableCell>
-                        </TableRow>
+                        {labour.map((item) => (<TableRow>
+                          <TableCell>{item.date}</TableCell>
+                          <TableCell>{item.worker}</TableCell>
+                          <TableCell>${item.rate}</TableCell>
+                          <TableCell>{item.hours}</TableCell>
+                          <TableCell>${item.total}</TableCell>
+                          <TableCell>{item.type}</TableCell>
+                          <TableCell>{item.notes}</TableCell>
+                        </TableRow>))}
                       </TableBody>
                     </Table>
                     <TableCaption>No labour loaded from a spreadsheet yet.</TableCaption>
@@ -648,6 +659,6 @@ export function Excel() {
     const formData = new FormData()
     formData.append("labour", labour)
     const result = await axios.post("http://localhost:8080/analyze/labour", formData)
-    console.log(result.data)
+    setLabour(result.data)
   }
 }
