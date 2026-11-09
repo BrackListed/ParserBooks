@@ -67,6 +67,7 @@ func main() {
 	http.HandleFunc("/extract/materials/invoice", extractMaterials)
 	http.HandleFunc("/analyze/projects", analyzeProjects)
 	http.HandleFunc("/analyze/materials", analyzeMaterials)
+	http.HandleFunc("/analyze/labour", analyzeLabour)
 	http.HandleFunc("/clear/file", clearFile)
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -1253,6 +1254,80 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(time.Duration(id*150) * time.Millisecond)                                         //space out the requests so they don't hit at the exact same timee)
 			response := processMaterials(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:]) //receive the return statement in the processMaterials
 			responses = append(responses, response.Materials...)                                         //append them in a collection of responses, spread operator to go inside the responses just like in js
+		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
+		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
+	}
+	wg.Wait()
+	log.Print("Done processing all")
+	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
+}
+
+func analyzeLabour(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	log.Println("Processing labour")
+	labour, _, err := r.FormFile("labour") //returns the filestream(project), header(metadata/information), and error
+	if err != nil {
+		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
+		http.Error(w, err.Error(), 400)
+	}
+	file, err := io.ReadAll(labour) //turn the file stream into bytes to be read by xlsx. Supabase isn't really optimal here, it doesn't need to be saved, plus even if it is we'll still do this
+	if err != nil {
+		log.Println("Unable to read file in analyzeProjects: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	wb, err := xlsx.OpenBinary(file) //openbinary is the only way to read bytes, other methods require reading the files/filepath
+	if err != nil {
+		log.Println("Unable to open project workbook in analyzeProjects: ", err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	sh := wb.Sheets[0]
+	maxRow := sh.MaxRow //provided by xlsx, self explanatory states the max rows
+	maxCol := sh.MaxCol
+	var values []string //declare a dynamic array
+	for row := 0; row <= maxRow; row++ {
+		var selectedRow []string //reset the row every new iteration
+		var finalRow string      //meant to hold the row alongside the asterisk separator
+		for col := 0; col <= maxCol; col++ {
+			cell, err := sh.Cell(row, col) //provided by xlsx, loop through the col before moving up the row, required to read cells
+			if err != nil {
+				log.Println("Error printing out cells: ", err.Error()) //sh.cell requires handling errors, so this is here
+				return
+			}
+			val := strings.TrimSpace(cell.Value)
+			if strings.TrimSpace(val) != "" { //remove whitespace
+				cell := fmt.Sprintf("Row: %d Col: %d Value: %s", row, col, val) //fmt sprintf builds a formatted string, %d is placeholder for int values, %s is placeholder for string values
+				selectedRow = append(selectedRow, cell)                         //append one more time to take the row only
+				finalRow = strings.Join(selectedRow, " ") + "*"                 //add an asterisk to serve as the clear separator of the rows
+			}
+		}
+		values = append(values, finalRow) //the row officially moves up, but since we moved it to the row loop it appends by row, rather than by column
+	}
+	length := len(values)
+	var wg sync.WaitGroup     //apparently this is needed for goroutines to synchronize em
+	var responses []Materials //create a dynamic array containing items of the struct fitting Response
+	increments := (length + 14) / 15
+	id := 0 //id variable meant to keep track of which goroutine it is
+	for x := 0; x < length; x += int(increments) {
+		id++                       //use to keep track, basically increments until the goroutine finishes so we know if we're on goroutine #1 or #2
+		end := x + int(increments) //calculate the end so we have a basis for the chunk
+		if end > length {
+			end = length //if the end is greater than the length default the end to the length
+		}
+		chunk := values[x:end] //slice the chunk, from the x to the end
+		fmt.Println(chunk)
+		go func(id int) { //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
+			defer wg.Done()                                      //reduces the counter so 1 background task becomes 0
+			time.Sleep(time.Duration(id*150) * time.Millisecond) //space out the requests so they don't hit at the exact same timee)
+			// response := processLabour(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:]) //receive the return statement in the processMaterials
+			// responses = append(responses, response.Materials...)                                         //append them in a collection of responses, spread operator to go inside the responses just like in js
 		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
 		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
 	}
