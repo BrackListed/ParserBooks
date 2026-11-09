@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { FileSpreadsheet, CheckCircle2, Upload, X, Loader2 } from "lucide-react"
 
 import DotGrid from "@/assets/DotGrid"
@@ -119,7 +119,9 @@ export function Excel() {
   const [materials, setMaterials] = useState<materialType[]>([])
   const [countdown, setCountdown] = useState(0)
   const [page, setPage] = useState(1)
-  const totalPages = Math.max(1, Math.ceil(materials.length / 10))
+  const [search, setSearch] = useState("")
+  const filteredMaterials = materials.filter((material) => material.description.toLowerCase().includes(search.toLowerCase()))
+  const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / 10))
   const total_ex_gst = materials.reduce((sum, entry) => {
     const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
     const net_ex_gst = ex_gst * entry.quantity
@@ -146,9 +148,6 @@ export function Excel() {
       <span className="text-sm text-neutral-300">All 15 requests have been exhausted. Wait {countdown}s</span>
     </div>
   ) : null
-  useEffect(() => {
-    console.log(materials.filter((entry) => !entry.total_inc_gst))
-  }, [materials])
   return (
     <div className="relative w-screen min-h-screen">
       <div className="absolute inset-0 -z-50">
@@ -249,7 +248,10 @@ export function Excel() {
                     title="Labour"
                     description="Timesheets, hours, and labour details."
                     file={labourFile}
-                    onChange={setLabourFile}
+                    onChange={(file) => {setLabourFile(file)
+                        if(file) analyzeLabourFile(file)
+                      }
+                    }
                     status={cooldown}
                   />
                   <FileUploadCard
@@ -368,11 +370,11 @@ export function Excel() {
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Start Date</label>
-                        <Input type="date" className="[color-scheme:dark]" value={project?.start_date ?? ""} onChange={(e) => setProject({ ...project!, start_date: e.target.value })} />
+                        <Input type="date" className="[scheme-dark]" value={project?.start_date ?? ""} onChange={(e) => setProject({ ...project!, start_date: e.target.value })} />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-sm text-neutral-300">Target Completion Date</label>
-                        <Input type="date" className="[color-scheme:dark]" value={project?.target_completion_date ?? ""} onChange={(e) => setProject({ ...project!, target_completion_date: e.target.value })} />
+                        <Input type="date" className="[scheme-dark]" value={project?.target_completion_date ?? ""} onChange={(e) => setProject({ ...project!, target_completion_date: e.target.value })} />
                       </div>
                     </div>
                   </div>
@@ -394,6 +396,14 @@ export function Excel() {
                         <p className="mt-1 text-xl font-semibold text-neutral-100">${total_inc_gst_with_markup.toFixed(2)}</p>
                       </div>
                     </div>
+                    <Input
+                      placeholder="Search by description"
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value)
+                        setPage(1)
+                      }}
+                    />
                     <Table>
                       <TableHeader>
                         <TableHead isRowHeader className="w-28">Date</TableHead>
@@ -410,7 +420,7 @@ export function Excel() {
                         <TableHead>Total With Markup</TableHead>
                       </TableHeader>
                       <TableBody>
-                        {materials.slice((page - 1) * 10, page * 10).map((material) => {
+                        {filteredMaterials.slice((page - 1) * 10, page * 10).map((material) => {
                           const ex_gst = material.total_inc_gst ? (material.unit_price / 1.10) : material.unit_price //a material with gst is 100% or 1 (base) + 10% or 0.1(gst). Dividing by 1.10 reverts it back to the base value. 1.1/1.1 = 1
                           const net_ex_gst = ex_gst * material.quantity
                           const gst = net_ex_gst * 0.10
@@ -431,7 +441,7 @@ export function Excel() {
                         </TableRow>)})}
                       </TableBody>
                     </Table>
-                    {materials.length > 10 && (
+                    {filteredMaterials.length > 10 && (
                       <div className="flex items-center justify-end gap-2 text-sm text-neutral-300">
                         <Button size="sm" variant="outline" isDisabled={page === 1} onClick={() => setPage(page - 1)}>
                           Prev
@@ -628,10 +638,16 @@ export function Excel() {
     setMaterials([])
     setPage(1)
     const result = await axios.post("http://localhost:8080/analyze/materials", formData)
-    console.log(result.data)
     setMaterials(result.data)
     setCountdown(60)
     const timer = setInterval(() => setCountdown((c) => c - 1), 1000)
     setTimeout(() => clearInterval(timer), 60000)
+  }
+
+  async function analyzeLabourFile(labour: File){
+    const formData = new FormData()
+    formData.append("labour", labour)
+    const result = await axios.post("http://localhost:8080/analyze/labour", formData)
+    console.log(result.data)
   }
 }
