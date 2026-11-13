@@ -68,7 +68,9 @@ func main() {
 	http.HandleFunc("/analyze/projects", analyzeProjects)
 	http.HandleFunc("/analyze/materials", analyzeMaterials)
 	http.HandleFunc("/analyze/labour", analyzeLabour)
+	http.HandleFunc("/analyze/variation", analyzeVariationFile)
 	http.HandleFunc("/clear/file", clearFile)
+
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -1213,6 +1215,7 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Processing materials")
 	materials, _, err := r.FormFile("materials") //returns the filestream(project), header(metadata/information), and error
+	materialType := r.FormValue("type")
 	if err != nil {
 		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
 		http.Error(w, err.Error(), 400)
@@ -1286,6 +1289,7 @@ func analyzeLabour(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Processing labour")
 	labour, _, err := r.FormFile("labour") //returns the filestream(project), header(metadata/information), and error
+	labourType := r.FormValue("variation")
 	if err != nil {
 		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
 		http.Error(w, err.Error(), 400)
@@ -1347,6 +1351,15 @@ func analyzeLabour(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 	log.Print("Done processing all")
 	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
+}
+
+func analyzeVariationFile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func processLabour(text string, reference []string, endRows []string) struct {

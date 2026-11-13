@@ -32,18 +32,23 @@ function FileUploadCard({
   file,
   onChange,
   status,
+  toggle,
 }: {
   title: string
   description: string
   file: File | null
   onChange: (file: File | null) => void
   status?: React.ReactNode
+  toggle?: React.ReactNode
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   return (
     <div className="rounded-lg border border-sidebar-border p-4">
-      <p className="font-semibold text-neutral-100">{title}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-semibold text-neutral-100">{title}</p>
+        {toggle}
+      </div>
       <p className="mt-1 text-sm text-neutral-400">{description}</p>
       <input
         ref={inputRef}
@@ -124,6 +129,8 @@ export function Excel() {
   const [projectDetailsFile, setProjectDetailsFile] = useState<File | null>(null)
   const [materialsFile, setMaterialsFile] = useState<File | null>(null)
   const [labourFile, setLabourFile] = useState<File | null>(null)
+  const [isVariationMaterial, setIsVariationMaterial] = useState(false)
+  const [isVariationLabour, setIsVariationLabour] = useState(false)
   const [variationFile, setVariationFile] = useState<File | null>(null)
   const [project, setProject] = useState<projectType | null>(null)
   const [materials, setMaterials] = useState<materialType[]>([])
@@ -246,8 +253,28 @@ export function Excel() {
                     file={materialsFile}
                     onChange={(file) => {
                       setMaterialsFile(file)
-                      if(file) analyzeMaterialsFile(file)
+                      if(file) analyzeMaterialsFile(file, isVariationMaterial)
                     }}
+                    toggle={
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={isVariationMaterial ? "outline" : undefined}
+                          className={isVariationMaterial ? "rounded-full" : "rounded-full bg-sky-500 text-white hover:bg-sky-400"}
+                          onClick={() => setIsVariationMaterial(false)}
+                        >
+                          Normal
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={isVariationMaterial ? undefined : "outline"}
+                          className={isVariationMaterial ? "rounded-full bg-sky-500 text-white hover:bg-sky-400" : "rounded-full"}
+                          onClick={() => setIsVariationMaterial(true)}
+                        >
+                          Variation
+                        </Button>
+                      </div>
+                    }
                     status={
                       materialsFile && materials.length === 0 ? (
                         <div className="flex items-center gap-2 text-sm text-neutral-300">
@@ -262,8 +289,28 @@ export function Excel() {
                     description="Timesheets, hours, and labour details."
                     file={labourFile}
                     onChange={(file) => {setLabourFile(file)
-                        if(file) analyzeLabourFile(file)
+                        if(file) analyzeLabourFile(file, isVariationLabour)
                       }
+                    }
+                    toggle={
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={isVariationLabour ? "outline" : undefined}
+                          className={isVariationLabour ? "rounded-full" : "rounded-full bg-sky-500 text-white hover:bg-sky-400"}
+                          onClick={() => setIsVariationLabour(false)}
+                        >
+                          Normal
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={isVariationLabour ? undefined : "outline"}
+                          className={isVariationLabour ? "rounded-full bg-sky-500 text-white hover:bg-sky-400" : "rounded-full"}
+                          onClick={() => setIsVariationLabour(true)}
+                        >
+                          Variation
+                        </Button>
+                      </div>
                     }
                     status={cooldown}
                   />
@@ -271,7 +318,8 @@ export function Excel() {
                     title="Variation"
                     description="Variation and change-order records."
                     file={variationFile}
-                    onChange={setVariationFile}
+                    onChange={(file) => { setVariationFile(file)
+                      if(file) analyzeVariationFile(file)}}
                     status={cooldown}
                   />
                 </div>
@@ -676,9 +724,14 @@ export function Excel() {
     })
   }
 
-  async function analyzeMaterialsFile(materials: File){
+  async function analyzeMaterialsFile(materials: File, isVariation: boolean){
     const formData = new FormData()
     formData.append("materials", materials)
+    if (isVariation) {
+      formData.append("type", "variation")
+    } else {
+      formData.append("type", "normal")
+    }
     setMaterials([])
     setPage(1)
     const result = await axios.post("http://localhost:8080/analyze/materials", formData)
@@ -688,11 +741,23 @@ export function Excel() {
     setTimeout(() => clearInterval(timer), 60000)
   }
 
-  async function analyzeLabourFile(labour: File){
+  async function analyzeLabourFile(labour: File, isVariation: boolean){
     const formData = new FormData()
     formData.append("labour", labour)
+    if (isVariation){
+      formData.append("type", "variation")
+    } else{
+      formData.append("type", "normal")
+    }
     const result = await axios.post("http://localhost:8080/analyze/labour", formData)
     setLabour(result.data)
     setLabourPage(1)
+  }
+
+  async function analyzeVariationFile(variation: File){
+    const formData = new FormData()
+    formData.append("variation", variation)
+    const result = await axios.post("http://localhost:8080/analyze/variation", formData)
+    console.log(result.data)
   }
 }
