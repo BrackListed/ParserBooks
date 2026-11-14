@@ -1186,6 +1186,7 @@ type Materials struct {
 	Total       float64 `json:"total"`
 	TotalIncGST bool    `json:"total_inc_gst"`
 	Markup      float64 `json:"markup"`
+	IsVariation bool    `json:"isVariation"`
 }
 type MaterialsResponse struct {
 	Materials []Materials `json:"materials"`
@@ -1196,13 +1197,14 @@ type LabourResponse struct {
 }
 
 type Labour struct {
-	Date   string  `json:"date"`
-	Worker string  `json:"worker"`
-	Rate   float64 `json:"rate"`
-	Hours  float64 `json:"hours"`
-	Total  float64 `json:"total"`
-	Type   string  `json:"type"`
-	Notes  string  `json:"notes"`
+	Date        string  `json:"date"`
+	Worker      string  `json:"worker"`
+	Rate        float64 `json:"rate"`
+	Hours       float64 `json:"hours"`
+	Total       float64 `json:"total"`
+	Type        string  `json:"type"`
+	Notes       string  `json:"notes"`
+	IsVariation bool    `json:"isVariation"`
 }
 
 func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
@@ -1215,7 +1217,13 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Processing materials")
 	materials, _, err := r.FormFile("materials") //returns the filestream(project), header(metadata/information), and error
+	var isVariation bool
 	materialType := r.FormValue("type")
+	if materialType == "normal" {
+		isVariation = false
+	} else {
+		isVariation = true
+	}
 	if err != nil {
 		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
 		http.Error(w, err.Error(), 400)
@@ -1267,10 +1275,10 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		}
 		chunk := values[x:end] //slice the chunk, from the x to the end
 		go func(id int) {      //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
-			defer wg.Done()                                                                              //reduces the counter so 1 background task becomes 0
-			time.Sleep(time.Duration(id*150) * time.Millisecond)                                         //space out the requests so they don't hit at the exact same timee)
-			response := processMaterials(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:]) //receive the return statement in the processMaterials
-			responses = append(responses, response.Materials...)                                         //append them in a collection of responses, spread operator to go inside the responses just like in js
+			defer wg.Done()                                                                                           //reduces the counter so 1 background task becomes 0
+			time.Sleep(time.Duration(id*150) * time.Millisecond)                                                      //space out the requests so they don't hit at the exact same timee)
+			response := processMaterials(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:], isVariation) //receive the return statement in the processMaterials
+			responses = append(responses, response.Materials...)                                                      //append them in a collection of responses, spread operator to go inside the responses just like in js
 		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
 		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
 	}
@@ -1289,7 +1297,13 @@ func analyzeLabour(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Processing labour")
 	labour, _, err := r.FormFile("labour") //returns the filestream(project), header(metadata/information), and error
+	var isVariation bool
 	labourType := r.FormValue("variation")
+	if labourType == "normal" {
+		isVariation = false
+	} else {
+		isVariation = true
+	}
 	if err != nil {
 		log.Println("Error reading material file in analyzeMaterials: ", err.Error())
 		http.Error(w, err.Error(), 400)
@@ -1341,10 +1355,10 @@ func analyzeLabour(w http.ResponseWriter, r *http.Request) {
 		}
 		chunk := values[x:end] //slice the chunk, from the x to the end
 		go func(id int) {      //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
-			defer wg.Done()                                                                           //reduces the counter so 1 background task becomes 0
-			time.Sleep(time.Duration(id*150) * time.Millisecond)                                      //space out the requests so they don't hit at the exact same timee)
-			response := processLabour(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:]) //receive the return statement in the processMaterials
-			responses = append(responses, response.Labour...)                                         //append them in a collection of responses, spread operator to go inside the responses just like in js
+			defer wg.Done()                                                                                        //reduces the counter so 1 background task becomes 0
+			time.Sleep(time.Duration(id*150) * time.Millisecond)                                                   //space out the requests so they don't hit at the exact same timee)
+			response := processLabour(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:], isVariation) //receive the return statement in the processMaterials
+			responses = append(responses, response.Labour...)                                                      //append them in a collection of responses, spread operator to go inside the responses just like in js
 		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
 		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
 	}
@@ -1362,7 +1376,7 @@ func analyzeVariationFile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func processLabour(text string, reference []string, endRows []string) struct {
+func processLabour(text string, reference []string, endRows []string, isVariation bool) struct {
 	Labour []Labour "json:\"labour\""
 } {
 	if err := godotenv.Load(); err != nil {
@@ -1432,13 +1446,17 @@ Spreadsheet Cells:
 	stringMessage := ai_response.Text()
 	var response LabourResponse
 	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
-		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
+		log.Println("Error decoding Gemini response in processLabour: ", err.Error())
 		return response
+	}
+	labourItems := response.Labour
+	for index := range labourItems {
+		labourItems[index].IsVariation = isVariation
 	}
 	return response
 }
 
-func processMaterials(text string, reference []string, endRows []string) struct {
+func processMaterials(text string, reference []string, endRows []string, isVariation bool) struct {
 	Materials []Materials "json:\"materials\""
 } {
 	if err := godotenv.Load(); err != nil {
@@ -1501,8 +1519,12 @@ Spreadsheet Cells:
 	stringMessage := ai_response.Text()
 	var response MaterialsResponse
 	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
-		log.Println("Error decoding Gemini response in analyzeProjects: ", err.Error())
+		log.Println("Error decoding Gemini response in processMaterials: ", err.Error())
 		return response
+	}
+	materials := response.Materials
+	for index := range materials {
+		materials[index].IsVariation = isVariation
 	}
 	return response
 }
