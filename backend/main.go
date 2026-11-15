@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -1451,7 +1452,14 @@ Spreadsheet Cells:
 	}
 	labourItems := response.Labour
 	for index := range labourItems {
+		date, err := strconv.ParseFloat(labourItems[index].Date, 64)
+		if err != nil {
+			log.Println("Error converting string into date in processLabour")
+		}
+		convertedDate := xlsx.TimeFromExcelTime(date, false)
+		newDate := convertedDate.String()
 		labourItems[index].IsVariation = isVariation
+		labourItems[index].Date = newDate[:10]
 	}
 	return response
 }
@@ -1524,7 +1532,14 @@ Spreadsheet Cells:
 	}
 	materials := response.Materials
 	for index := range materials {
+		date, err := strconv.ParseFloat(materials[index].Date, 64) //converts a string into a float, takes the string then a second value that dictates whether float64 or float32
+		if err != nil {
+			log.Println("Error converting date into float in processMaterials")
+		}
+		convertedDate := xlsx.TimeFromExcelTime(date, false) //converts an excel time in float64 into Time.Time, xlsx advised if I don't know whether to use the 1900 or 1904 model then set the second variable to false
+		newDate := convertedDate.String()
 		materials[index].IsVariation = isVariation
+		materials[index].Date = newDate[:10] //turn the time into string
 	}
 	return response
 }
