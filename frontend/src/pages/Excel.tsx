@@ -111,6 +111,7 @@ interface materialType{
   total: number
   total_inc_gst: boolean
   unit_price: number
+  isVariation: boolean
 }
 
 interface labourType{
@@ -121,6 +122,7 @@ interface labourType{
   total: number
   type: string
   notes: string
+  isVariation: boolean
 }
 
 export function Excel() {
@@ -139,9 +141,13 @@ export function Excel() {
   const [search, setSearch] = useState("")
   const filteredMaterials = materials.filter((material) => material.description.toLowerCase().includes(search.toLowerCase()))
   const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / 10))
+  const [variationSearch, setVariationSearch] = useState("")
   const [labour, setLabour] = useState<labourType[]>([])
   const [labourPage, setLabourPage] = useState(1)
   const labourTotalPages = Math.max(1, Math.ceil(labour.length / 10))
+  const variationMaterials = materials.filter((material) => material.isVariation)
+  const variationLabour = labour.filter((entry) => entry.isVariation)
+  const filteredVariationMaterials = variationMaterials.filter((material) => material.description.toLowerCase().includes(variationSearch.toLowerCase()))
   const total_ex_gst = materials.reduce((sum, entry) => {
     const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
     const net_ex_gst = ex_gst * entry.quantity
@@ -644,6 +650,11 @@ export function Excel() {
 
                     {variationTab === "materials" && (
                       <>
+                        <Input
+                          placeholder="Search by description"
+                          value={variationSearch}
+                          onChange={(e) => setVariationSearch(e.target.value)}
+                        />
                         <Table>
                           <TableHeader>
                             <TableHead isRowHeader className="w-28">Date</TableHead>
@@ -656,16 +667,21 @@ export function Excel() {
                             <TableHead>Total</TableHead>
                           </TableHeader>
                           <TableBody>
-                            <TableRow>
-                              <TableCell>01/01/2026</TableCell>
-                              <TableCell>PC-001</TableCell>
-                              <TableCell>Supplier Name</TableCell>
-                              <TableCell>Description</TableCell>
-                              <TableCell>1</TableCell>
-                              <TableCell>$0.00</TableCell>
-                              <TableCell>$0.00</TableCell>
-                              <TableCell>$0.00</TableCell>
-                            </TableRow>
+                            {filteredVariationMaterials.map((material) => {
+                              const ex_gst = material.total_inc_gst ? (material.unit_price / 1.10) : material.unit_price
+                              const net_ex_gst = ex_gst * material.quantity
+                              const gst = net_ex_gst * 0.10
+                              const total_inc_gst = net_ex_gst + gst
+                              return (<TableRow>
+                                <TableCell>{material.date}</TableCell>
+                                <TableCell>{material.product_code}</TableCell>
+                                <TableCell>{material.supplier}</TableCell>
+                                <TableCell>{material.description}</TableCell>
+                                <TableCell>{material.quantity}</TableCell>
+                                <TableCell>${ex_gst.toFixed(2)}</TableCell>
+                                <TableCell>${gst.toFixed(2)}</TableCell>
+                                <TableCell>${total_inc_gst.toFixed(2)}</TableCell>
+                              </TableRow>)})}
                           </TableBody>
                         </Table>
                         <TableCaption>No materials loaded for this variation yet.</TableCaption>
@@ -684,14 +700,14 @@ export function Excel() {
                             <TableHead>Notes</TableHead>
                           </TableHeader>
                           <TableBody>
-                            <TableRow>
-                              <TableCell>01/01/2026</TableCell>
-                              <TableCell>Worker Name</TableCell>
-                              <TableCell>$0.00</TableCell>
-                              <TableCell>0</TableCell>
-                              <TableCell>$0.00</TableCell>
-                              <TableCell>Notes</TableCell>
-                            </TableRow>
+                            {variationLabour.map((item) => (<TableRow>
+                              <TableCell>{item.date}</TableCell>
+                              <TableCell>{item.worker}</TableCell>
+                              <TableCell>${item.rate}</TableCell>
+                              <TableCell>{item.hours}</TableCell>
+                              <TableCell>${item.total}</TableCell>
+                              <TableCell>{item.notes}</TableCell>
+                            </TableRow>))}
                           </TableBody>
                         </Table>
                         <TableCaption>No labour loaded for this variation yet.</TableCaption>
@@ -736,6 +752,7 @@ export function Excel() {
     setPage(1)
     const result = await axios.post("http://localhost:8080/analyze/materials", formData)
     setMaterials(result.data)
+    console.log(result.data)
     setCountdown(60)
     const timer = setInterval(() => setCountdown((c) => c - 1), 1000)
     setTimeout(() => clearInterval(timer), 60000)
