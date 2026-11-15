@@ -69,7 +69,6 @@ func main() {
 	http.HandleFunc("/analyze/projects", analyzeProjects)
 	http.HandleFunc("/analyze/materials", analyzeMaterials)
 	http.HandleFunc("/analyze/labour", analyzeLabour)
-	http.HandleFunc("/analyze/variation", analyzeVariationFile)
 	http.HandleFunc("/clear/file", clearFile)
 
 	fmt.Println("Server listening on port 8080")
@@ -1264,10 +1263,10 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		values = append(values, finalRow) //the row officially moves up, but since we moved it to the row loop it appends by row, rather than by column
 	}
 	length := len(values)
-	var wg sync.WaitGroup     //apparently this is needed for goroutines to synchronize em
-	var responses []Materials //create a dynamic array containing items of the struct fitting Response
-	increments := (length + 14) / 15
-	id := 0 //id variable meant to keep track of which goroutine it is
+	var wg sync.WaitGroup            //apparently this is needed for goroutines to synchronize em
+	var responses []Materials        //create a dynamic array containing items of the struct fitting Response
+	increments := (length + 14) / 15 //ensures that if the number is like 1 it becomes 15, so it doesn't break the code and results to at least 1 increment, since go rounds down adding 14 never breaks it because it never goes high enough to reach the next tier.
+	id := 0                          //id variable meant to keep track of which goroutine it is
 	for x := 0; x < length; x += int(increments) {
 		id++                       //use to keep track, basically increments until the goroutine finishes so we know if we're on goroutine #1 or #2
 		end := x + int(increments) //calculate the end so we have a basis for the chunk
@@ -1366,15 +1365,6 @@ func analyzeLabour(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 	log.Print("Done processing all")
 	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
-}
-
-func analyzeVariationFile(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusOK)
-	}
 }
 
 func processLabour(text string, reference []string, endRows []string, isVariation bool) struct {

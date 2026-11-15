@@ -133,7 +133,6 @@ export function Excel() {
   const [labourFile, setLabourFile] = useState<File | null>(null)
   const [isVariationMaterial, setIsVariationMaterial] = useState(false)
   const [isVariationLabour, setIsVariationLabour] = useState(false)
-  const [variationFile, setVariationFile] = useState<File | null>(null)
   const [project, setProject] = useState<projectType | null>(null)
   const [materials, setMaterials] = useState<materialType[]>([])
   const [countdown, setCountdown] = useState(0)
@@ -237,7 +236,7 @@ export function Excel() {
                     Upload source files
                   </h2>
                   <p className="text-sm text-neutral-400">
-                    Add the four files that will eventually feed the import flow.
+                    Add the three files that will eventually feed the import flow.
                   </p>
                 </div>
                 <div className="h-px w-full bg-sidebar-border" />
@@ -318,14 +317,6 @@ export function Excel() {
                         </Button>
                       </div>
                     }
-                    status={cooldown}
-                  />
-                  <FileUploadCard
-                    title="Variation"
-                    description="Variation and change-order records."
-                    file={variationFile}
-                    onChange={(file) => { setVariationFile(file)
-                      if(file) analyzeVariationFile(file)}}
                     status={cooldown}
                   />
                 </div>
@@ -769,12 +760,5 @@ export function Excel() {
     const result = await axios.post("http://localhost:8080/analyze/labour", formData)
     setLabour(result.data)
     setLabourPage(1)
-  }
-
-  async function analyzeVariationFile(variation: File){
-    const formData = new FormData()
-    formData.append("variation", variation)
-    const result = await axios.post("http://localhost:8080/analyze/variation", formData)
-    console.log(result.data)
   }
 }
