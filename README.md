@@ -41,8 +41,11 @@ A full-stack construction and project management app for tracking project financ
     * Date, product code, supplier, invoice, description, quantity, and markup can be edited in place. The cells look like plain text, and the worked-out columns and totals update as you edit.
   * **Labour** — the labour sheet goes through the same pipeline as Materials: rows are kept whole, split into 15 chunks, and sent to Gemini in parallel goroutines. Gemini returns date, worker, rate, hours, total, type, and notes for each row, using a labour-specific prompt with the same strict rules (no guessing between columns, `""` or `0` for missing fields, never null).
     * The rows appear in a table that shows 10 items per page, with the same page controls as Materials.
+    * A Total card adds up every row's total, so it matches the sheet.
     * Every field can be edited in place, and Type is a dropdown of Normal or Overtime.
-  * **Normal and variation uploads** — the Materials and Labour upload cards each have a Normal / Variation toggle. Its setting is sent with the file, and the backend tags every item from that upload as variation or not. Materials and labour uploaded as variation also show up under the Variation tab, where variation materials can be searched by description and show Ex GST, GST, and Total for each item.
+  * **Normal and variation uploads** — the Materials and Labour upload cards each have a Normal / Variation toggle. Its setting is sent with the file, and the backend tags every item from that upload as variation or not. Materials and labour uploaded as variation also show up under the Variation tab:
+    * **Variation materials** get the same three totals cards as Materials (Total Ex GST, Total Inc GST, Total Inc GST With Markup), can be searched by description, and show Ex GST, GST, and Total for each item.
+    * **Variation labour** gets the same Total card as Labour.
   * **Upload cooldown** — while a materials or labour file is processing, its card shows a loading spinner. Once the results arrive, every upload card is locked for 60 seconds behind a countdown bar, so the next upload doesn't go over Gemini's 15 requests per minute.
   * **Exact math** — totals are worked out from unrounded values and only rounded to 2 decimals when shown on screen, so they stay as close to the spreadsheet as possible. Expenses are stored unrounded for the same reason.
 
@@ -59,7 +62,30 @@ A full-stack construction and project management app for tracking project financ
 
 Materials ingestion used to send the whole sheet to Gemini in one request, and a single test sheet took **35–38 seconds** to come back.
 
+| | Before | After |
+|---|---|---|
+| Requests to Gemini | 1 | 15, in parallel |
+| Wait on the same test sheet | **35–38s** | **7s** |
+
 It now works like this:
+
+```mermaid
+flowchart LR
+    A["📄 .xlsx upload"] --> B["Read every cell<br/>Row: r Col: c Value: v"]
+    B --> C["Join each row's cells<br/>and end it with *"]
+    C --> D["Split rows into<br/>15 chunks"]
+    D --> G1["goroutine 1<br/>+150 ms"]
+    D --> G2["goroutine 2<br/>+300 ms"]
+    D --> G3["…"]
+    D --> G15["goroutine 15<br/>+2.25 s"]
+    G1 --> AI["🤖 Gemini<br/>one request per chunk"]
+    G2 --> AI
+    G3 --> AI
+    G15 --> AI
+    AI --> W["sync.WaitGroup<br/>waits for all 15"]
+    W --> J["Combined JSON"]
+    J --> F["⚛️ Frontend tables<br/>and totals"]
+```
 
 1. **Rows are kept whole.** Each row's cells are joined and marked with a `*` separator, so a chunk never cuts a row in half.
 2. **The sheet is split into 15 chunks**, one for each request Gemini's free tier allows per minute.
@@ -73,10 +99,47 @@ Labour ingestion was built on the same pipeline, so labour sheets get the same s
 
 ---
 
+## 🔀 How an upload flows
+
+Every materials or labour upload follows the same path, from the Normal / Variation toggle to the 60-second lock:
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant FE as Import from Excel page
+    participant BE as Go backend
+    participant AI as Gemini
+
+    U->>FE: Pick Normal or Variation, then upload a sheet
+    FE->>FE: Show loading spinner on the card
+    FE->>BE: POST /analyze/materials or /analyze/labour<br/>(file + type = normal or variation)
+    BE->>BE: Read cells, keep rows whole, split into 15 chunks
+    par 15 goroutines, 150 ms apart
+        BE->>AI: Chunk + first and last rows as context
+        AI-->>BE: JSON items
+    end
+    BE->>BE: Tag every item with isVariation
+    BE-->>FE: All items combined
+    FE->>FE: Fill tables, work out totals
+    FE->>FE: Lock every upload card for 60 s
+    Note over FE,AI: Gemini's free tier allows 15 requests per minute,<br/>so the lock lets it reset before the next upload
+```
+
+Once the items arrive, the `isVariation` tag decides which tabs they show up in:
+
+```mermaid
+flowchart TD
+    M["Materials items"] --> MT["Materials tab<br/>all items · 3 totals cards<br/>search · 10 per page · editable"]
+    M -- "isVariation" --> VM["Variation → Materials<br/>3 totals cards · search"]
+    L["Labour items"] --> LT["Labour tab<br/>all items · Total card<br/>10 per page · editable"]
+    L -- "isVariation" --> VL["Variation → Labour<br/>Total card"]
+```
+
+---
+
 ## 🗺️ Roadmap
 
 * **Save to Project Summary** — write the extracted project, materials, and labour data into Postgres.
-* **Labour total** — the labour Total card still shows $0.00.
 * **Variation tab** — add editing and 10-per-page paging to the variation tables, and decide whether variation items should also stay in the main Materials and Labour tabs.
 
 ---
