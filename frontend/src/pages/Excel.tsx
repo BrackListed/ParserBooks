@@ -147,6 +147,10 @@ export function Excel() {
   const variationMaterials = materials.filter((material) => material.isVariation)
   const variationLabour = labour.filter((entry) => entry.isVariation)
   const filteredVariationMaterials = variationMaterials.filter((material) => material.description.toLowerCase().includes(variationSearch.toLowerCase()))
+  const [variationMaterialsPage, setVariationMaterialsPage] = useState(1)
+  const variationMaterialsTotalPages = Math.max(1, Math.ceil(filteredVariationMaterials.length / 10))
+  const [variationLabourPage, setVariationLabourPage] = useState(1)
+  const variationLabourTotalPages = Math.max(1, Math.ceil(variationLabour.length / 10))
   const total_ex_gst = materials.reduce((sum, entry) => {
     const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
     const net_ex_gst = ex_gst * entry.quantity
@@ -549,7 +553,9 @@ export function Excel() {
                         </Button>
                       </div>
                     )}
-                    <TableCaption>No materials loaded from a spreadsheet yet.</TableCaption>
+                    {!variationMaterials && (
+                      <TableCaption>No materials loaded from a spreadsheet yet.</TableCaption>
+                    )}
                   </>
                 )}
 
@@ -689,7 +695,10 @@ export function Excel() {
                         <Input
                           placeholder="Search by description"
                           value={variationSearch}
-                          onChange={(e) => setVariationSearch(e.target.value)}
+                          onChange={(e) => {
+                            setVariationSearch(e.target.value)
+                            setVariationMaterialsPage(1)
+                          }}
                         />
                         <Table>
                           <TableHeader>
@@ -703,7 +712,7 @@ export function Excel() {
                             <TableHead>Total</TableHead>
                           </TableHeader>
                           <TableBody>
-                            {filteredVariationMaterials.map((material) => {
+                            {filteredVariationMaterials.slice((variationMaterialsPage - 1) * 10, variationMaterialsPage * 10).map((material) => {
                               const ex_gst = material.total_inc_gst ? (material.unit_price / 1.10) : material.unit_price
                               const net_ex_gst = ex_gst * material.quantity
                               const gst = net_ex_gst * 0.10
@@ -720,6 +729,25 @@ export function Excel() {
                               </TableRow>)})}
                           </TableBody>
                         </Table>
+                        {filteredVariationMaterials.length > 10 && (
+                          <div className="flex items-center justify-end gap-2 text-sm text-neutral-300">
+                            <Button size="sm" variant="outline" isDisabled={variationMaterialsPage === 1} onClick={() => setVariationMaterialsPage(variationMaterialsPage - 1)}>
+                              Prev
+                            </Button>
+                            <Input
+                              type="number"
+                              className="w-16 text-center"
+                              min={1}
+                              max={variationMaterialsTotalPages}
+                              value={variationMaterialsPage}
+                              onChange={(e) => setVariationMaterialsPage(Math.min(variationMaterialsTotalPages, Math.max(1, Number(e.target.value))))}
+                            />
+                            <span>of {variationMaterialsTotalPages}</span>
+                            <Button size="sm" variant="outline" isDisabled={variationMaterialsPage === variationMaterialsTotalPages} onClick={() => setVariationMaterialsPage(variationMaterialsPage + 1)}>
+                              Next
+                            </Button>
+                          </div>
+                        )}
                         <TableCaption>No materials loaded for this variation yet.</TableCaption>
                       </>
                     )}
@@ -742,7 +770,7 @@ export function Excel() {
                             <TableHead>Notes</TableHead>
                           </TableHeader>
                           <TableBody>
-                            {variationLabour.map((item) => (<TableRow>
+                            {variationLabour.slice((variationLabourPage - 1) * 10, variationLabourPage * 10).map((item) => (<TableRow>
                               <TableCell>{item.date}</TableCell>
                               <TableCell>{item.worker}</TableCell>
                               <TableCell>${item.rate}</TableCell>
@@ -752,6 +780,25 @@ export function Excel() {
                             </TableRow>))}
                           </TableBody>
                         </Table>
+                        {variationLabour.length > 10 && (
+                          <div className="flex items-center justify-end gap-2 text-sm text-neutral-300">
+                            <Button size="sm" variant="outline" isDisabled={variationLabourPage === 1} onClick={() => setVariationLabourPage(variationLabourPage - 1)}>
+                              Prev
+                            </Button>
+                            <Input
+                              type="number"
+                              className="w-16 text-center"
+                              min={1}
+                              max={variationLabourTotalPages}
+                              value={variationLabourPage}
+                              onChange={(e) => setVariationLabourPage(Math.min(variationLabourTotalPages, Math.max(1, Number(e.target.value))))}
+                            />
+                            <span>of {variationLabourTotalPages}</span>
+                            <Button size="sm" variant="outline" isDisabled={variationLabourPage === variationLabourTotalPages} onClick={() => setVariationLabourPage(variationLabourPage + 1)}>
+                              Next
+                            </Button>
+                          </div>
+                        )}
                         <TableCaption>No labour loaded for this variation yet.</TableCaption>
                       </>
                     )}
