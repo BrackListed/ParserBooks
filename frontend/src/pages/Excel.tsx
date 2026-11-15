@@ -165,6 +165,30 @@ export function Excel() {
     const inc_gst = net_ex_gst + gst
     return sum + inc_gst * (1 + (entry.markup / 100))
   }, 0)
+  const labour_total = labour.reduce((sum, entry) => {
+    return sum + entry.total
+  }, 0)
+  const variation_total_ex_gst = variationMaterials.reduce((sum, entry) => {
+    const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
+    const net_ex_gst = ex_gst * entry.quantity
+    return sum + net_ex_gst
+  }, 0)
+  const variation_total_inc_gst = variationMaterials.reduce((sum, entry) => {
+    const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
+    const net_ex_gst = ex_gst * entry.quantity
+    const gst = net_ex_gst * 0.10
+    return sum + (net_ex_gst + gst)
+  }, 0)
+  const variation_total_inc_gst_with_markup = variationMaterials.reduce((sum, entry) => {
+    const ex_gst = entry.total_inc_gst ? (entry.unit_price / 1.10) : entry.unit_price
+    const net_ex_gst = ex_gst * entry.quantity
+    const gst = net_ex_gst * 0.10
+    const inc_gst = net_ex_gst + gst
+    return sum + inc_gst * (1 + (entry.markup / 100))
+  }, 0)
+  const variation_labour_total = variationLabour.reduce((sum, entry) => {
+    return sum + entry.total
+  }, 0)
   const cooldown = countdown > 0 ? (
     <div className="flex w-full flex-col gap-1.5">
       <div className="h-2 w-full rounded-full bg-neutral-800">
@@ -317,7 +341,14 @@ export function Excel() {
                         </Button>
                       </div>
                     }
-                    status={cooldown}
+                    status={
+                      labourFile && labour.length === 0 ? (
+                        <div className="flex items-center gap-2 text-sm text-neutral-300">
+                          <Loader2 className="size-4 animate-spin text-sky-400" />
+                          Loading Labour...
+                        </div>
+                      ) : cooldown
+                    }
                   />
                 </div>
               </BentoGridItem>
@@ -527,7 +558,7 @@ export function Excel() {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div className="rounded-lg border border-sidebar-border px-4 py-3">
                         <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total</p>
-                        <p className="mt-1 text-xl font-semibold text-neutral-100">$0.00</p>
+                        <p className="mt-1 text-xl font-semibold text-neutral-100">${labour_total.toFixed(2)}</p>
                       </div>
                     </div>
                     <Table>
@@ -641,6 +672,20 @@ export function Excel() {
 
                     {variationTab === "materials" && (
                       <>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <div className="rounded-lg border border-sidebar-border px-4 py-3">
+                            <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total Ex GST</p>
+                            <p className="mt-1 text-xl font-semibold text-neutral-100">${variation_total_ex_gst.toFixed(2)}</p>
+                          </div>
+                          <div className="rounded-lg border border-sidebar-border px-4 py-3">
+                            <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total Inc GST</p>
+                            <p className="mt-1 text-xl font-semibold text-neutral-100">${variation_total_inc_gst.toFixed(2)}</p>
+                          </div>
+                          <div className="rounded-lg border border-sidebar-border px-4 py-3">
+                            <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total Inc GST With Markup</p>
+                            <p className="mt-1 text-xl font-semibold text-neutral-100">${variation_total_inc_gst_with_markup.toFixed(2)}</p>
+                          </div>
+                        </div>
                         <Input
                           placeholder="Search by description"
                           value={variationSearch}
@@ -681,6 +726,12 @@ export function Excel() {
 
                     {variationTab === "labour" && (
                       <>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          <div className="rounded-lg border border-sidebar-border px-4 py-3">
+                            <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">Total</p>
+                            <p className="mt-1 text-xl font-semibold text-neutral-100">${variation_labour_total.toFixed(2)}</p>
+                          </div>
+                        </div>
                         <Table>
                           <TableHeader>
                             <TableHead isRowHeader className="w-28">Date</TableHead>
@@ -757,8 +808,12 @@ export function Excel() {
     } else{
       formData.append("type", "normal")
     }
+    setLabour([])
+    setLabourPage(1)
     const result = await axios.post("http://localhost:8080/analyze/labour", formData)
     setLabour(result.data)
-    setLabourPage(1)
+    setCountdown(60)
+    const timer = setInterval(() => setCountdown((c) => c - 1), 1000)
+    setTimeout(() => clearInterval(timer), 60000)
   }
 }

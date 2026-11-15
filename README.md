@@ -39,12 +39,12 @@ A full-stack construction and project management app for tracking project financ
     * The rows appear in a table with Ex GST, Net Ex GST, GST, Total, and Total With Markup worked out per item, plus cards for Total Ex GST, Total Inc GST, and Total Inc GST With Markup.
     * The table shows 10 items per page, with Prev/Next buttons and a page number box, and can be searched by description.
     * Date, product code, supplier, invoice, description, quantity, and markup can be edited in place. The cells look like plain text, and the worked-out columns and totals update as you edit.
-  * **Labour** — uses the same chunked goroutine pipeline as Materials. Gemini returns date, worker, rate, hours, total, type, and notes for each row.
-    * The rows appear in a table that shows 10 items per page, with the same page controls.
+  * **Labour** — the labour sheet goes through the same pipeline as Materials: rows are kept whole, split into 15 chunks, and sent to Gemini in parallel goroutines. Gemini returns date, worker, rate, hours, total, type, and notes for each row, using a labour-specific prompt with the same strict rules (no guessing between columns, `""` or `0` for missing fields, never null).
+    * The rows appear in a table that shows 10 items per page, with the same page controls as Materials.
     * Every field can be edited in place, and Type is a dropdown of Normal or Overtime.
-  * **Upload cooldown** — while materials are processing, the Materials card shows a loading spinner. Once they arrive, every upload card is locked for 60 seconds behind a countdown bar, so the next upload doesn't go over Gemini's 15 requests per minute.
+  * **Normal and variation uploads** — the Materials and Labour upload cards each have a Normal / Variation toggle. Its setting is sent with the file, and the backend tags every item from that upload as variation or not. Materials and labour uploaded as variation also show up under the Variation tab, where variation materials can be searched by description and show Ex GST, GST, and Total for each item.
+  * **Upload cooldown** — while a materials or labour file is processing, its card shows a loading spinner. Once the results arrive, every upload card is locked for 60 seconds behind a countdown bar, so the next upload doesn't go over Gemini's 15 requests per minute.
   * **Exact math** — totals are worked out from unrounded values and only rounded to 2 decimals when shown on screen, so they stay as close to the spreadsheet as possible. Expenses are stored unrounded for the same reason.
-  * Variation uploads don't parse yet.
 
 ### 📅 Operations & Accounting
 * **Work Calendar** — daily worker hours and project assignments.
@@ -67,15 +67,17 @@ It now works like this:
 
 On the same sheet, the wait went from **35s to 7s, an 80% decrease**.
 
-**Trade-off:** one upload uses up the free tier's 15 requests for that minute, so uploads are locked for 60 seconds afterwards while Gemini resets. Labour uses the same pipeline.
+**Trade-off:** one upload uses up the free tier's 15 requests for that minute, so uploads are locked for 60 seconds afterwards while Gemini resets.
+
+Labour ingestion was built on the same pipeline, so labour sheets get the same speed-up.
 
 ---
 
 ## 🗺️ Roadmap
 
 * **Save to Project Summary** — write the extracted project, materials, and labour data into Postgres.
-* **Variation ingestion** — reuse the chunked goroutine pipeline for variation sheets.
-* **Labour cooldown and total** — a labour upload doesn't start the 60-second lock yet, and the labour Total card still shows $0.00.
+* **Labour total** — the labour Total card still shows $0.00.
+* **Variation tab** — add editing and 10-per-page paging to the variation tables, and decide whether variation items should also stay in the main Materials and Labour tabs.
 
 ---
 
