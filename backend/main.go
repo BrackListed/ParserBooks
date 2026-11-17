@@ -25,6 +25,8 @@ import (
 
 var db *pgxpool.Pool
 
+const redisAddr = "127.0.0.1:6379"
+
 func main() {
 	var err error
 	dbURL := os.Getenv("DOCKER_URL")
@@ -71,7 +73,6 @@ func main() {
 	http.HandleFunc("/analyze/materials", analyzeMaterials)
 	http.HandleFunc("/analyze/labour", analyzeLabour)
 	http.HandleFunc("/clear/file", clearFile)
-
 	fmt.Println("Server listening on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -1297,7 +1298,13 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("Error compiling the payload in analyzeMaterials: ", err.Error())
 		}
-		asynq.NewTask(TypeAnalyzeMaterials, payload) //it's in the docs, creates a new task, takes a task type name and the payload
+		asynq.NewTask(TypeAnalyzeMaterials, payload) //it's in the docs, creates a new task, takes a task type name and the payload. Got rid of the return and nil cus we're not gonna reuse this
+		client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
+		defer client.Close()
+		if err != nil {
+			log.Fatalf("could not enqueue task: %v", err)
+		}
+		log.Printf("enqueued task: id=%s queue=%s", info.ID, info.Queue)
 	}
 	log.Print("Done processing all")
 	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
