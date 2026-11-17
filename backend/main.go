@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/ledongthuc/pdf"
@@ -1207,6 +1208,17 @@ type Labour struct {
 	IsVariation bool    `json:"isVariation"`
 }
 
+type geminiPayload struct {
+	JoinedRows    string   `json:"joinedRows"`
+	ReferenceRows []string `json:"referenceRows"`
+	EndRows       []string `json:"endRows"`
+	IsVariation   bool     `json:"isVariation"`
+}
+
+const (
+	TypeAnalyzeMaterials = "analyze:materials"
+)
+
 func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -1273,16 +1285,20 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		if end > length {
 			end = length //if the end is greater than the length default the end to the length
 		}
-		chunk := values[x:end] //slice the chunk, from the x to the end
-		go func(id int) {      //id is just a variable int, think: goroutine #(1) --> id, runs everytime i increments
-			defer wg.Done()                                                                                           //reduces the counter so 1 background task becomes 0
-			time.Sleep(time.Duration(id*150) * time.Millisecond)                                                      //space out the requests so they don't hit at the exact same timee)
-			response := processMaterials(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:], isVariation) //receive the return statement in the processMaterials
-			responses = append(responses, response.Materials...)                                                      //append them in a collection of responses, spread operator to go inside the responses just like in js
-		}(id) //this is where the id goes, this is basically assignign the number to whichever goroutine is now running
-		wg.Add(1) //says "1 background task is spinning up, this is like counter = counter + 1, storage is inside the wg itself"
+		chunk := values[x:end]                                                                                    //slice the chunk, from the x to the end
+		response := processMaterials(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:], isVariation) //receive the return statement in the processMaterials
+		responses = append(responses, response.Materials...)                                                      //append them in a collection of responses, spread operator to go inside the responses just like in js
+		payload, err := json.Marshal(geminiPayload{                                                               //create payload object and compile it according to the gemini payload struct
+			JoinedRows:    strings.Join(chunk, "\n"),
+			ReferenceRows: values[0:5],
+			EndRows:       values[len(values)-5:],
+			IsVariation:   isVariation,
+		})
+		if err != nil {
+			log.Println("Error compiling the payload in analyzeMaterials: ", err.Error())
+		}
+		asynq.NewTask(TypeAnalyzeMaterials, payload) //it's in the docs, creates a new task, takes a task type name and the payload
 	}
-	wg.Wait()
 	log.Print("Done processing all")
 	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend
 }
