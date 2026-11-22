@@ -7,8 +7,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hibiken/asynq"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	xlsx "github.com/tealeg/xlsx/v3"
 	"google.golang.org/genai"
@@ -23,6 +25,7 @@ type geminiPayload struct {
 	ReferenceRows []string `json:"referenceRows"`
 	EndRows       []string `json:"endRows"`
 	IsVariation   bool     `json:"isVariation"`
+	ID            string   `json:"id"`
 }
 
 type Materials struct {
@@ -38,16 +41,36 @@ type Materials struct {
 	Markup      float64 `json:"markup"`
 	IsVariation bool    `json:"isVariation"`
 }
+
 type MaterialsResponse struct {
 	Materials []Materials `json:"materials"`
 }
 
-func NewMaterialsTask(joinedRows string, referenceRows []string, endRows []string, isVariation bool) { //cus we're gonna pass things into this function
+type MaterialsDatabase struct {
+	ID          string    `json:"id"`
+	UserID      string    `json:"user_id"`
+	ProjectID   string    `json:"project_id"`
+	Supplier    string    `json:"supplier"`
+	Invoice     string    `json:"invoice"`
+	ProductCode string    `json:"product_code"`
+	Quantity    int       `json:"quantity"`
+	Description string    `json:"description"`
+	UnitPrice   float64   `json:"unit_price"`
+	NetPrice    float64   `json:"net_price"`
+	Gst         float64   `json:"gst"`
+	Total       float64   `json:"total"`
+	Date        time.Time `json:"date"`
+	Temporary   bool      `json:"temporary"`
+	TemporaryID string    `json:"temporary_id"`
+}
+
+func NewMaterialsTask(joinedRows string, referenceRows []string, endRows []string, isVariation bool, id string) { //cus we're gonna pass things into this function
 	payload, err := json.Marshal(geminiPayload{
 		JoinedRows:    joinedRows,
 		ReferenceRows: referenceRows,
 		EndRows:       endRows,
 		IsVariation:   isVariation,
+		ID:            id,
 	})
 	if err != nil {
 		log.Println("Error compiling the payload structs into 1 object in tasks.go: ", err.Error())
@@ -56,6 +79,14 @@ func NewMaterialsTask(joinedRows string, referenceRows []string, endRows []strin
 }
 
 func HandleMaterialsTask(ctx context.Context, t *asynq.Task) {
+	dbURL := os.Getenv("DOCKER_URL")
+	if dbURL == "" {
+		dbURL = os.Getenv("DATABASE_URL")
+	}
+	db, err := pgxpool.New(context.Background(), dbURL)
+	if err != nil {
+		log.Fatal("Failed to connect to db: ", err)
+	}
 	var p geminiPayload
 	if err := godotenv.Load(); err != nil {
 		log.Println("ENV failed to load in Extract Materials: ", err.Error())
@@ -115,7 +146,6 @@ Spreadsheet Cells:
 	var response MaterialsResponse
 	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
 		log.Println("Error decoding Gemini response in processMaterials: ", err.Error())
-		return response
 	}
 	materials := response.Materials
 	for index := range materials {
@@ -128,5 +158,29 @@ Spreadsheet Cells:
 		materials[index].IsVariation = p.IsVariation
 		materials[index].Date = newDate[:10] //turn the time into string
 	}
-	return response
+	for index, value := range materials {
+		var ex_gst float64
+		var id string
+		if value.TotalIncGST {
+			ex_gst = value.UnitPrice / 1.10
+		} else {
+			ex_gst = value.UnitPrice
+		}
+		net_price := ex_gst * float64(value.Quantity)
+		gst := net_price * 0.10
+		total := net_price + gst
+		rows, err := db.Query(ctx, `INSERT INTO materials(user_id, supplier, invoice, product_code, quantity, description, unit_price, net_price, gst, total, date, temporary, temporary_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+		RETURNING supplier, invoice, product_code, quantity, description, unit_price, net_price, gst, total, date, temporary, temporary_id`,
+			"ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", value.Supplier, value.Invoice, value.ProductCode, value.Quantity, value.Description, ex_gst, net_price, gst, total, value.Date, true, id)
+		if err != nil {
+			log.Println("Error retrieving items from the db in HandleMaterialsTask: ", err.Error())
+		}
+		materials := []MaterialsDatabase{}
+		for rows.Next() {
+			var e MaterialsDatabase
+			rows.Scan(&e.Supplier, &e.Invoice, &e.ProductCode, &e.Quantity, &e.Description, &e.UnitPrice, &e.NetPrice, &e.Gst, &e.Total, &e.Date, &e.Temporary, &e.TemporaryID)
+			materials = append(materials, e)
+		}
+	}
+	return materials
 }
