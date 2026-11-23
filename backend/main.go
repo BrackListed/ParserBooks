@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	tasks "backend/asynq"
+
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -1289,23 +1291,20 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		chunk := values[x:end]                                                                                    //slice the chunk, from the x to the end
 		response := processMaterials(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:], isVariation) //receive the return statement in the processMaterials
 		responses = append(responses, response.Materials...)                                                      //append them in a collection of responses, spread operator to go inside the responses just like in js
-		payload, err := json.Marshal(geminiPayload{                                                               //create payload object and compile it according to the gemini payload struct
-			JoinedRows:    strings.Join(chunk, "\n"),
-			ReferenceRows: values[0:5],
-			EndRows:       values[len(values)-5:],
-			IsVariation:   isVariation,
-			id:            id,
-		})
 		if err != nil {
 			log.Println("Error compiling the payload in analyzeMaterials: ", err.Error())
 		}
-		asynq.NewTask(TypeAnalyzeMaterials, payload) //it's in the docs, creates a new task, takes a task type name and the payload. Got rid of the return and nil cus we're not gonna reuse this
 		client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
 		defer client.Close()
+		task, err := tasks.NewMaterialsTask(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:], isVariation, id) //pass this to the tasks package, just so it's marshalled and a new task is created(view tasks.go for reference)
+		if err != nil {
+			log.Fatalf("could not create task: %v", err)
+		}
+		info, err := client.Enqueue(task)
 		if err != nil {
 			log.Fatalf("could not enqueue task: %v", err)
 		}
-		// log.Printf("enqueued task: id=%s queue=%s", info.ID, info.Queue)
+		log.Printf("enqueued task: id=%s queue=%s", info.ID, info.Queue)
 	}
 	log.Print("Done processing all")
 	json.NewEncoder(w).Encode(responses) //encode those responses to be sent to the frontend

@@ -64,7 +64,7 @@ type MaterialsDatabase struct {
 	TemporaryID string    `json:"temporary_id"`
 }
 
-func NewMaterialsTask(joinedRows string, referenceRows []string, endRows []string, isVariation bool, id string) { //cus we're gonna pass things into this function
+func NewMaterialsTask(joinedRows string, referenceRows []string, endRows []string, isVariation bool, id string) (*asynq.Task, error) { //cus we're gonna pass things into this function
 	payload, err := json.Marshal(geminiPayload{
 		JoinedRows:    joinedRows,
 		ReferenceRows: referenceRows,
@@ -78,7 +78,7 @@ func NewMaterialsTask(joinedRows string, referenceRows []string, endRows []strin
 	return asynq.NewTask(TypeAnalyzeMaterials, payload), nil
 }
 
-func HandleMaterialsTask(ctx context.Context, t *asynq.Task) {
+func HandleMaterialsTask(ctx context.Context, t *asynq.Task) []Materials {
 	dbURL := os.Getenv("DOCKER_URL")
 	if dbURL == "" {
 		dbURL = os.Getenv("DATABASE_URL")
@@ -158,7 +158,7 @@ Spreadsheet Cells:
 		materials[index].IsVariation = p.IsVariation
 		materials[index].Date = newDate[:10] //turn the time into string
 	}
-	for index, value := range materials {
+	for _, value := range materials {
 		var ex_gst float64
 		var id string
 		if value.TotalIncGST {
