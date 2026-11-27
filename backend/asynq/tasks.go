@@ -78,37 +78,30 @@ func NewMaterialsTask(joinedRows string, referenceRows []string, endRows []strin
 	return asynq.NewTask(TypeAnalyzeMaterials, payload), nil
 }
 
-func HandleMaterialsTask(ctx context.Context, t *asynq.Task) []Materials {
-	dbURL := os.Getenv("DOCKER_URL")
-	if dbURL == "" {
-		dbURL = os.Getenv("DATABASE_URL")
-	}
-	db, err := pgxpool.New(context.Background(), dbURL)
-	if err != nil {
-		log.Fatal("Failed to connect to db: ", err)
-	}
-	var p geminiPayload
-	if err := godotenv.Load(); err != nil {
-		log.Println("ENV failed to load in Extract Materials: ", err.Error())
-	}
-	var apiKey = os.Getenv("GEMINI_API_KEY")
-	ctx = context.Background()
-	client, err := genai.NewClient(ctx, &genai.ClientConfig{
-		APIKey:  apiKey,
-		Backend: genai.BackendGeminiAPI,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	chat, err := client.Chats.Create(ctx, "gemini-3.5-flash-lite", nil, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	ai_response, err := chat.SendMessage(
-		ctx,
-		genai.Part{
-			// Join the collected strings before concatenating because values is a []string.
-			Text: `Extract materials data from a spreadsheet and return it as raw JSON.
+func HandleMaterialsTask(db *pgxpool.Pool) asynq.HandlerFunc { //need to turn this into a handlerfunc cus we're gonna pass db into this so that it won't have to keep opening a new pool every task
+	return func(ctx context.Context, t *asynq.Task) error {
+		var p geminiPayload
+		if err := godotenv.Load(); err != nil {
+			log.Println("ENV failed to load in Extract Materials: ", err.Error())
+		}
+		var apiKey = os.Getenv("GEMINI_API_KEY")
+		ctx = context.Background()
+		client, err := genai.NewClient(ctx, &genai.ClientConfig{
+			APIKey:  apiKey,
+			Backend: genai.BackendGeminiAPI,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		chat, err := client.Chats.Create(ctx, "gemini-3.5-flash-lite", nil, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ai_response, err := chat.SendMessage(
+			ctx,
+			genai.Part{
+				// Join the collected strings before concatenating because values is a []string.
+				Text: `Extract materials data from a spreadsheet and return it as raw JSON.
 
 INPUT:
 - "Spreadsheet Cells": the line items to extract, one non-empty cell per line in the format "Row: r Col: c Value: v".
@@ -137,50 +130,51 @@ End Rows:
 
 Spreadsheet Cells:
 ` + p.JoinedRows,
-		},
-	)
-	if err != nil {
-		log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
-	}
-	stringMessage := ai_response.Text()
-	var response MaterialsResponse
-	if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
-		log.Println("Error decoding Gemini response in processMaterials: ", err.Error())
-	}
-	materials := response.Materials
-	for index := range materials {
-		date, err := strconv.ParseFloat(materials[index].Date, 64) //converts a string into a float, takes the string then a second value that dictates whether float64 or float32
+			},
+		)
 		if err != nil {
-			log.Println("Error converting date into float in processMaterials")
+			log.Println("Error soliciting response from Gemini in Extract Projects: ", err.Error())
 		}
-		convertedDate := xlsx.TimeFromExcelTime(date, false) //converts an excel time in float64 into Time.Time, xlsx advised if I don't know whether to use the 1900 or 1904 model then set the second variable to false
-		newDate := convertedDate.String()
-		materials[index].IsVariation = p.IsVariation
-		materials[index].Date = newDate[:10] //turn the time into string
-	}
-	for _, value := range materials {
-		var ex_gst float64
-		var id string
-		if value.TotalIncGST {
-			ex_gst = value.UnitPrice / 1.10
-		} else {
-			ex_gst = value.UnitPrice
+		stringMessage := ai_response.Text()
+		var response MaterialsResponse
+		if err := json.Unmarshal([]byte(stringMessage), &response); err != nil {
+			log.Println("Error decoding Gemini response in processMaterials: ", err.Error())
 		}
-		net_price := ex_gst * float64(value.Quantity)
-		gst := net_price * 0.10
-		total := net_price + gst
-		rows, err := db.Query(ctx, `INSERT INTO materials(user_id, supplier, invoice, product_code, quantity, description, unit_price, net_price, gst, total, date, temporary, temporary_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+		materials := response.Materials
+		for index := range materials {
+			date, err := strconv.ParseFloat(materials[index].Date, 64) //converts a string into a float, takes the string then a second value that dictates whether float64 or float32
+			if err != nil {
+				log.Println("Error converting date into float in processMaterials")
+			}
+			convertedDate := xlsx.TimeFromExcelTime(date, false) //converts an excel time in float64 into Time.Time, xlsx advised if I don't know whether to use the 1900 or 1904 model then set the second variable to false
+			newDate := convertedDate.String()
+			materials[index].IsVariation = p.IsVariation
+			materials[index].Date = newDate[:10] //turn the time into string
+		}
+		for _, value := range materials {
+			var ex_gst float64
+			var id string
+			if value.TotalIncGST {
+				ex_gst = value.UnitPrice / 1.10
+			} else {
+				ex_gst = value.UnitPrice
+			}
+			net_price := ex_gst * float64(value.Quantity)
+			gst := net_price * 0.10
+			total := net_price + gst
+			rows, err := db.Query(ctx, `INSERT INTO materials(user_id, supplier, invoice, product_code, quantity, description, unit_price, net_price, gst, total, date, temporary, temporary_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
 		RETURNING supplier, invoice, product_code, quantity, description, unit_price, net_price, gst, total, date, temporary, temporary_id`,
-			"ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", value.Supplier, value.Invoice, value.ProductCode, value.Quantity, value.Description, ex_gst, net_price, gst, total, value.Date, true, id)
-		if err != nil {
-			log.Println("Error retrieving items from the db in HandleMaterialsTask: ", err.Error())
+				"ab22cf42-f2d6-401d-b3a8-5320f67bbbf5", value.Supplier, value.Invoice, value.ProductCode, value.Quantity, value.Description, ex_gst, net_price, gst, total, value.Date, true, id)
+			if err != nil {
+				log.Println("Error retrieving items from the db in HandleMaterialsTask: ", err.Error())
+			}
+			materials := []MaterialsDatabase{}
+			for rows.Next() {
+				var e MaterialsDatabase
+				rows.Scan(&e.Supplier, &e.Invoice, &e.ProductCode, &e.Quantity, &e.Description, &e.UnitPrice, &e.NetPrice, &e.Gst, &e.Total, &e.Date, &e.Temporary, &e.TemporaryID)
+				materials = append(materials, e)
+			}
 		}
-		materials := []MaterialsDatabase{}
-		for rows.Next() {
-			var e MaterialsDatabase
-			rows.Scan(&e.Supplier, &e.Invoice, &e.ProductCode, &e.Quantity, &e.Description, &e.UnitPrice, &e.NetPrice, &e.Gst, &e.Total, &e.Date, &e.Temporary, &e.TemporaryID)
-			materials = append(materials, e)
-		}
+		return err
 	}
-	return materials
 }

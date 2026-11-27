@@ -1211,14 +1211,6 @@ type Labour struct {
 	IsVariation bool    `json:"isVariation"`
 }
 
-type geminiPayload struct {
-	JoinedRows    string   `json:"joinedRows"`
-	ReferenceRows []string `json:"referenceRows"`
-	EndRows       []string `json:"endRows"`
-	IsVariation   bool     `json:"isVariation"`
-	ID            string   `json:"id"`
-}
-
 const (
 	TypeAnalyzeMaterials = "analyze:materials"
 )
@@ -1291,9 +1283,6 @@ func analyzeMaterials(w http.ResponseWriter, r *http.Request) {
 		chunk := values[x:end]                                                                                    //slice the chunk, from the x to the end
 		response := processMaterials(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:], isVariation) //receive the return statement in the processMaterials
 		responses = append(responses, response.Materials...)                                                      //append them in a collection of responses, spread operator to go inside the responses just like in js
-		if err != nil {
-			log.Println("Error compiling the payload in analyzeMaterials: ", err.Error())
-		}
 		client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
 		defer client.Close()
 		task, err := tasks.NewMaterialsTask(strings.Join(chunk, "\n"), values[0:5], values[len(values)-5:], isVariation, id) //pass this to the tasks package, just so it's marshalled and a new task is created(view tasks.go for reference)
